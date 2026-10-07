@@ -1,0 +1,67 @@
+import { newId } from "./ids";
+import { db, type UserSettings, type WorkoutExercise } from "./db";
+import { equipmentIncrement } from "./library";
+import { libraryItem, programTemplates } from "./templates";
+import type { Unit } from "../domain/types";
+
+let seeding: Promise<void> | null = null;
+/** Re-run the seed even if it already ran this session. Needed after a login pull:
+ * pull() clears Dexie, and the memoized ensureSeeded() from app boot would no-op,
+ * leaving brand-new accounts empty (no starter program, no settings). */
+export async function reseed(): Promise<void> { seeding = null; await ensureSeeded(); }
+export function ensureSeeded(): Promise<void> {
+  if (!seeding) seeding = seedOnce().catch(error => { seeding = null; throw error; });
+  return seeding;
+}
+
+/** Idempotent seed: safe under StrictMode, HMR, and interrupted prior writes. */
+async function seedOnce(): Promise<void> {
+  const template = programTemplates[0];
+  let program = await db.programs.where("template_key").equals(template.key).first();
+  if (!program) {
+    const now = new Date().toISOString();
+    program = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, name: "My Program", template_key: template.key, sort: 0 };
+    await db.programs.put(program);
+  }
+
+  const settings = await db.user_settings.get("local");
+  if (!settings) {
+    const now = new Date().toISOString();
+    const row: UserSettings = { id: "local", user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, units: "kg", theme: "system", active_program_id: program.id, warmup_reminder_enabled: true, warmup_scheme: [{ pct: 0.5, reps: 15 }, { pct: 0.75, reps: 7 }, { pct: 0.9, reps: 3 }], default_rest_seconds: 27, progression_window: 3, gap_reset_weeks: 4 };
+    await db.user_settings.put(row);
+  }
+
+  for (const [wi, wt] of template.workouts.entries()) {
+    let workout = await db.workouts.where("program_id").equals(program.id).filter(w => w.name === wt.name).first();
+    if (!workout) {
+      const now = new Date().toISOString();
+      workout = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, program_id: program.id, name: wt.name, position: wi };
+      await db.workouts.put(workout);
+    }
+    for (const [pos, spec] of wt.exercises.entries()) {
+      const item = libraryItem(spec.key);
+      if (!item) continue;
+      let exercise = await db.exercises.where("library_key").equals(item.key).first();
+      if (!exercise) {
+        const now = new Date().toISOString();
+        const unit: Unit = "kg";
+        const primary = item.equipment[0];
+        exercise = {
+          id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1,
+          name: item.name, muscle_group: item.muscle_group, equipment: item.equipment, library_key: item.key, protocol: "rest_pause", setup_notes: "",
+          base_weight: null, base_weight_unit: null, per_side: false, unilateral: !!item.unilateral,
+          increment: equipmentIncrement[primary].kg, increment_unit: unit, miniset_count: 3,
+          miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 12, total_target_max: 15, rest_seconds: 27,
+          safety_flag: !!item.safety_flag, technique_confirmed_at: now, baseline_reset_at: null, stagnation_dismissed_at: null, archived_at: null,
+        };
+        await db.exercises.put(exercise);
+      }
+      const link = await db.workout_exercises.where("workout_id").equals(workout.id).filter(row => row.exercise_id === exercise!.id && !row.replaced_at).first();
+      if (!link) {
+        const now = new Date().toISOString();
+        const row: WorkoutExercise = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, workout_id: workout.id, exercise_id: exercise.id, position: pos, warmup_mode: spec.warmup_mode ?? "auto", replaced_at: null };
+        await db.workout_exercises.put(row);
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+@import "tailwindcss";
+:root{font-family:'DM Sans',sans-serif;font-synthesis:none;text-rendering:optimizeLegibility;font-weight:400}button{font-family:inherit}button:focus-visible{outline:2px solid #d8ec62;outline-offset:3px}::selection{background:#d8ec62;color:#101311}
