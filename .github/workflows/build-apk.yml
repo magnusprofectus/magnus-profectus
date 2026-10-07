@@ -28,6 +28,13 @@ jobs:
       - run: npm ci --include=dev
       - run: npm run articles:build && npm run build
       - run: npx cap sync android
+      - name: Bump versionCode per build (Obtainium detects updates by versionCode)
+        run: |
+          cd android
+          RUN=${{ github.run_number }}
+          TODAY=$(date +%Y.%m.%d)
+          sed -i -E "s/versionCode [0-9]+/versionCode $RUN/; s/versionName \"[^\"]+\"/versionName \"$TODAY ($RUN)\"/" app/build.gradle
+          grep -n "versionCode\|versionName" app/build.gradle
       - name: Decode signing keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}

@@ -1,2 +1,8 @@
 @import "tailwindcss";
+/* Android WebView font boosting inflates text blocks and pushes layout wider than
+   the screen (sideways scrolling on phones). text-size-adjust: 100% disables it;
+   overflow-x hidden guarantees the app scales to fit instead of scrolling sideways. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden}
+body{overflow-x:hidden}
+img,svg,video,table,input,select,textarea{max-width:100%}
 :root{font-family:'DM Sans',sans-serif;font-synthesis:none;text-rendering:optimizeLegibility;font-weight:400}button{font-family:inherit}button:focus-visible{outline:2px solid #d8ec62;outline-offset:3px}::selection{background:#d8ec62;color:#101311}

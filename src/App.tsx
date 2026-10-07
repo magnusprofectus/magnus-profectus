@@ -105,9 +105,6 @@ function App() {
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [busy, setBusy] = useState(true);
   const [removeConfirm, setRemoveConfirm] = useState<{ linkId: string; name: string } | null>(null);
-  const [techniqueConfirmed, setTechniqueConfirmed] = useState<Set<string>>(new Set());
-  const [pendingTechnique, setPendingTechnique] = useState<ReturnType<typeof libraryItem> | null>(null);
-  const [pendingAfterConfirm, setPendingAfterConfirm] = useState<string | null>(null);
   const programs = useLiveQuery(() => db.programs.filter(p => !p.deleted_at).sortBy("sort"));
   const settings = useLiveQuery(() => db.user_settings.get("local"));
   const program = programs?.find(p => p.id === settings?.active_program_id) ?? programs?.[0];
@@ -380,8 +377,8 @@ function App() {
     const existing = await db.exercises.where("library_key").equals(key).first();
     if (existing) return existing.id;
     const item = libraryItem(key); if (!item) throw new Error("missing library item");
-    // §7.8/§11: first copy-in of a library item shows the technique reminder once
-    if (!techniqueConfirmed.has(key)) { setPendingTechnique(item); throw new Error("TECHNIQUE_PENDING"); }
+    // Technique reminder disabled (2026-10-07, user decision): appeared inconsistently,
+    // sometimes twice for one exercise. The guide carries the technique content instead.
     const ex = await repo.createExercise({
       name: item.name, muscle_group: item.muscle_group, equipment: item.equipment, library_key: item.key, setup_notes: "",
       base_weight: null, base_weight_unit: null, per_side: false, unilateral: !!item.unilateral,
@@ -393,23 +390,10 @@ function App() {
   }
   async function addExercise(key: string) {
     if (!selected) return;
-    try {
-      const exerciseId = await ensureExercise(key);
-      const existingLink = await db.workout_exercises.where("workout_id").equals(selected).filter(x => x.exercise_id === exerciseId && !x.replaced_at).first();
-      if (!existingLink) await repo.addExerciseToWorkout(selected, exerciseId);
-      setShowAdd(false);
-    } catch (err) {
-      if ((err as Error).message === "TECHNIQUE_PENDING") setPendingAfterConfirm(key);
-      else throw err;
-    }
-  }
-  async function confirmTechnique() {
-    const key = pendingAfterConfirm;
-    setPendingTechnique(null);
-    if (!key) return;
-    setTechniqueConfirmed(prev => new Set(prev).add(key));
-    setPendingAfterConfirm(null);
-    await addExercise(key);
+    const exerciseId = await ensureExercise(key);
+    const existingLink = await db.workout_exercises.where("workout_id").equals(selected).filter(x => x.exercise_id === exerciseId && !x.replaced_at).first();
+    if (!existingLink) await repo.addExerciseToWorkout(selected, exerciseId);
+    setShowAdd(false);
   }
   async function removeExercise(linkId: string) {
     const link = (allLinks ?? []).find(x => x.id === linkId);
@@ -500,7 +484,6 @@ function App() {
   {circuitInfo && <div className="modal-backdrop" onClick={() => setCircuitInfo(false)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">WARM-UP CIRCUIT</p><h2>Not available yet</h2></div><button className="close-button" onClick={() => setCircuitInfo(false)}>×</button></div><p className="lede">{circuitUnavailableReason}</p><div className="modal-actions"><button className="button-secondary" onClick={() => setCircuitInfo(false)}>OK</button><a className="button-secondary" href="#/Extra/article/saving-time" onClick={() => setCircuitInfo(false)}>Why circuits save time</a></div></div></div>}
   {cancelConfirm && currentSession && <div className="modal-backdrop" onClick={() => setCancelConfirm(false)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">CANCEL SESSION</p><h2>Cancel this workout?</h2></div><button className="close-button" onClick={() => setCancelConfirm(false)}>×</button></div><p className="lede">Everything logged in this session (weights and reps) will be permanently deleted. Your history stays untouched.</p><div className="modal-actions"><button className="button-secondary" onClick={() => setCancelConfirm(false)}>Keep going</button><button className="button-primary" onClick={() => void cancelCurrentWorkout()}>Cancel session</button></div></div></div>}
   {finishSummary && <FinishSummaryModal data={finishSummary} onClose={() => setFinishSummary(null)} />}
-  {pendingTechnique && <div className="modal-backdrop"><div className="modal-panel"><div className="modal-head"><div><p className="overline">BEFORE YOU ADD {pendingTechnique.name.toUpperCase()}</p><h2>Technique first</h2></div><button className="close-button" onClick={() => { setPendingTechnique(null); setPendingAfterConfirm(null); }}>×</button></div><p className="lede">Every set in this program goes to failure, so good technique matters more than usual. If you're not fully confident with this movement, review it with a coach or a good tutorial first.</p><div className="modal-actions"><a className="button-secondary technique-link" href={`https://www.youtube.com/results?search_query=${encodeURIComponent(pendingTechnique.name + " technique")}`} target="_blank" rel="noreferrer">Find tutorials</a><button className="button-primary" onClick={() => void confirmTechnique()}>I'm confident, add it</button></div></div></div>}
   {showCustomForm && <CustomExerciseModal onClose={() => setShowCustomForm(false)} unit={unit} onCreated={() => { setShowCustomForm(false); }} workoutId={selected} />}
   </div>;
 }
