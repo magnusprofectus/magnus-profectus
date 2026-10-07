@@ -86,3 +86,7 @@ button.disabled{opacity:.45;cursor:not-allowed}
 .default-badge.old{color:#c8a24a;border-color:#c8a24a66}
 .lock-note{opacity:.55;font-size:12px;margin-left:2px}
 .program-card-actions .row-action[aria-label^="Hide"]{color:#9aa5b1}
+
+/* Phone fit hardening (2026-10-07): the weight box must never leave the screen,
+   number spinners render oversized on some Android WebViews. */
+.logger-main{min-width:0}.weight-entry{max-width:100%;box-sizing:border-box}.weight-entry input{min-width:0}input[type=number]{-moz-appearance:textfield;appearance:textfield}input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
