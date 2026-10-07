@@ -1,5 +1,5 @@
 // Next-session weight direction (SPEC §6.7, user-revised 2026-09):
-// the app recommends a *direction* — decrease / keep same and beat reps / increase —
+// the app recommends a *direction*, decrease / keep same and beat reps / increase —
 // never a specific incremented weight. Weight choice stays with the user.
 import type { DomainLog, ExerciseSettings } from "./types";
 import { isEligible, orderedLogs } from "./progression";

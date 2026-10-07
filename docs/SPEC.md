@@ -1,4 +1,4 @@
-# Rest-Pause Training Tracker — Build Specification (v1)
+# Rest-Pause Training Tracker: Build Specification (v1)
 
 > **For the implementing agent:** this document is the single source of truth. Build it milestone by milestone (§17). Where something is ambiguous, choose the simplest option consistent with this spec and note the decision in `DECISIONS.md`. The domain logic in §6 is the core of the product: implement it as pure, fully unit-tested functions before any UI. The in-app guide text is supplied separately in `GUIDE.md`.
 
@@ -106,11 +106,11 @@ supabase/migrations/*.sql
 ## 5. Data model
 
 All tables (Supabase and Dexie mirror) share these columns:
-- `id uuid` — client-generated v4
+- `id uuid`: client-generated v4
 - `user_id uuid`
 - `created_at timestamptz`
-- `updated_at timestamptz` — set by the client on every write
-- `deleted_at timestamptz null` — soft delete; the UI filters these out
+- `updated_at timestamptz`: set by the client on every write
+- `deleted_at timestamptz null`: soft delete; the UI filters these out
 
 Dexie rows additionally carry `_dirty: 0|1`.
 
@@ -146,8 +146,8 @@ Every table also has a **`protocol text default 'rest_pause'`** column where not
 | library_key | text null |
 | protocol | 'rest_pause' |
 | setup_notes | text (seat height, grip, bar used…), shown every time |
-| base_weight, base_weight_unit | numeric null, 'kg' \| 'lb' — optional (§6.2) |
-| per_side | bool, default false — optional (§6.2) |
+| base_weight, base_weight_unit | numeric null, 'kg' \| 'lb': optional (§6.2) |
+| per_side | bool, default false: optional (§6.2) |
 | unilateral | bool, default false (log weaker side; see §7.4) |
 | increment, increment_unit | weight step **in the user's entry convention** (defaults §10) |
 | miniset_count | int 1–5, default 3 |
@@ -553,7 +553,7 @@ S = `safety_flag`, U = `unilateral`. Keys are kebab-case names.
   - Title: "Before you add {exercise}"
   - Body: "Every set in this program goes to failure, so good technique matters more than usual. If you're not fully confident with this movement, review it with a coach or a good tutorial first."
   - Buttons: [Find tutorials] (opens `https://www.youtube.com/results?search_query={exercise}+technique`) · [I'm confident, add it]
-- **Warm-up confirmation:** "Warm-up sets done?" [OK] — small print: "You can turn this reminder off in Settings."
+- **Warm-up confirmation:** "Warm-up sets done?" [OK]: small print: "You can turn this reminder off in Settings."
 - **Weight info:** "Use the same weight for all mini-sets. If it feels off, change it next session. We'll suggest how."
 - **Base weight info:**
   - "Optional. Weight that's there before you add any: the bar, a machine sled, or your bodyweight for bodyweight exercises. It makes warm-up suggestions accurate."

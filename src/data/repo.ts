@@ -222,7 +222,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
   for (const log of logs) await softDelete(db.exercise_logs, log.id);
 }
 
-/** User-revised 2026-09: cancel an in-progress session — hard-delete session + logs so
+/** User-revised 2026-09: cancel an in-progress session, hard-delete session + logs so
  * nothing is kept (unlike softDelete, which keeps history for the sync/export layer). */
 export async function cancelSession(sessionId: string): Promise<void> {
   const logs = await db.exercise_logs.where("session_id").equals(sessionId).toArray();
@@ -315,7 +315,7 @@ export async function importLogsCsv(csv: string): Promise<{ imported: number; sk
   const lines = csv.replace(/\r/g, "").split("\n").filter(l => l.trim());
   if (lines.length < 2) return { imported: 0, skipped: 0, errors: ["File is empty."] };
   const header = lines[0].toLowerCase();
-  if (!header.startsWith("session_date,workout,exercise")) return { imported: 0, skipped: 0, errors: ["Unexpected columns. Download the template first — do not rename columns."] };
+  if (!header.startsWith("session_date,workout,exercise")) return { imported: 0, skipped: 0, errors: ["Unexpected columns. Download the template first, do not rename columns."] };
   const existingExercises = await db.exercises.toArray();
   const byName = new Map(existingExercises.map(e => [e.name.toLowerCase(), e]));
   const sessionsByDate = new Map<string, Session>(); // key: date|workout

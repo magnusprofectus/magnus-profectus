@@ -1,7 +1,7 @@
 // Warm-up suggestions (SPEC §6.8). All weights are in the user's entry convention.
 //
 // Rounding (user-revised 2026-09): suggestions round DOWN to the nearest whole
-// kg/lb of the calculated amount — never up. Rounding to plate increments (e.g.
+// kg/lb of the calculated amount, never up. Rounding to plate increments (e.g.
 // 5 kg) distorts light exercises like lateral raises, where 5 vs 7.5 kg is a
 // huge relative jump. The user picks the nearest available weight for the
 // exercise; the guide and an inline note mention this.

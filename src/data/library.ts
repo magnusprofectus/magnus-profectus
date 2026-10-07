@@ -4,7 +4,7 @@ export interface LibraryItem { key: string; name: string; muscle_group: MuscleGr
 const item = (key: string, name: string, muscle_group: MuscleGroup, equipment: Equipment[], extras: Partial<LibraryItem> = {}): LibraryItem => ({ key, name, muscle_group, equipment, ...extras });
 
 // Built-in exercise library (SPEC §10.2). Gym-equipment focus; ~70 movements
-// across all 11 muscle groups. key is stable — never rename a key, only the label.
+// across all 11 muscle groups. key is stable, never rename a key, only the label.
 export const exerciseLibrary: LibraryItem[] = [
   // quads (8)
   item("leg-press", "Leg Press", "quads", ["machine"]), item("hack-squat", "Hack Squat", "quads", ["machine"]), item("back-squat", "Barbell Back Squat", "quads", ["barbell"], { safety_flag: true }), item("leg-extension", "Leg Extension", "quads", ["machine"]),

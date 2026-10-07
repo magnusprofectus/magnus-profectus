@@ -29,7 +29,7 @@ export default defineConfig({
         runtimeCaching: [{
           // index.html: network-first so updates land; fall back to cache offline.
           // (Precaching index.html + cache-first navigation caused stale-hash 404s
-          // on phones after rebuilds — the reported "doesn't load".)
+          // on phones after rebuilds, the reported "doesn't load".)
           urlPattern: ({ request }) => request.mode === "navigate",
           handler: "NetworkFirst",
           options: { cacheName: "pages", networkTimeoutSeconds: 3 },

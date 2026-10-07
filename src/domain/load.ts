@@ -9,7 +9,7 @@ export function realLoadPerRepKg(log: Pick<DomainLog, "weight_kg" | "base_weight
   );
 }
 
-/** Sum of entered mini-set reps (nulls ignored — for live entry before completion). */
+/** Sum of entered mini-set reps (nulls ignored, for live entry before completion). */
 export function totalReps(log: Pick<DomainLog, "miniset_reps">): number {
   return log.miniset_reps.reduce<number>(
     (acc, r) => acc + (r === null ? 0 : r),

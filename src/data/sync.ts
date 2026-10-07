@@ -44,7 +44,7 @@ export async function login(username: string, password: string) {
   await afterAuth();
 }
 
-/** Server wins at login. Anonymous rows are NOT pushed — the logout→reload cycle
+/** Server wins at login. Anonymous rows are NOT pushed, the logout→reload cycle
  * re-seeds a fresh anonymous program, and pushing it at login duplicated the default
  * program on the server every cycle (user-reported bug). A brand-new account is
  * seeded AFTER pull, then pushed once. */
@@ -116,7 +116,7 @@ function runDefaultsMerge(body: { defaults?: unknown; defaults_user_id?: string 
   return mergeDefaults(body.defaults as never, currentUser?.id, body.defaults_user_id);
 }
 
-/** called by repo after every write — fire-and-forget single-row push with retry */
+/** called by repo after every write, fire-and-forget single-row push with retry */
 const retryQueue: Array<{ table_name: SyncTable; id: string; updated_at: string; deleted: boolean; data: Record<string, unknown> }> = [];
 let retryTimer: number | null = null;
 export function pushRow(table_name: SyncTable, id: string, updated_at: string, deleted: boolean, data: Record<string, unknown>) {

@@ -2,7 +2,7 @@
 // Zero-dependency Node server: static dist + auth + per-user row store.
 // Zero deps on purpose: node:http + node:sqlite (Node 24) + node:crypto scrypt.
 // Migration path to Supabase: the `rows` table is generic
-// (table_name, id, user_id, updated_at, deleted, data JSON) — dump/transform
+// (table_name, id, user_id, updated_at, deleted, data JSON), dump/transform
 // into Postgres tables later; auth swaps to Supabase Auth (email verification,
 // recovery added THERE, deliberately absent here).
 import { createServer } from "node:http";
@@ -95,7 +95,7 @@ function serveStatic(req, res, pathname) {
     const target = pathname.endsWith(".css") ? readdirSync(cur).find(f => f.endsWith(".css")) : readdirSync(cur).find(f => f.endsWith(".js") && f.startsWith("index-"));
     if (target) file = join(cur, target);
   }
-  if (!existsSync(file)) return json(res, 404, { error: "not built — run npm run build" });
+  if (!existsSync(file)) return json(res, 404, { error: "not built, run npm run build" });
   res.writeHead(200, { "Content-Type": MIME[extname(file)] ?? "application/octet-stream" });
   res.end(readFileSync(file));
 }

@@ -1,4 +1,4 @@
-// Domain-level types (SPEC §5, §6). Pure data — no Dexie, no React, no Supabase.
+// Domain-level types (SPEC §5, §6). Pure data, no Dexie, no React, no Supabase.
 // The data layer maps stored rows onto these; session flags are flattened onto the
 // log because progression rules need them and domain functions stay single-argument.
 

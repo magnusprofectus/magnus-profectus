@@ -358,7 +358,7 @@ function App() {
     setActiveLogId(null);
   }
   /** A removed/swapped exercise leaves its pre-created not_started log behind in the
-   * current session — a ghost row in history. Clean it up together with the link. */
+   * current session, a ghost row in history. Clean it up together with the link. */
   async function dropGhostLog(exerciseId: string) {
     if (!currentSession) return;
     const log = (sessionLogs ?? []).find(x => x.exercise_id === exerciseId && x.status === "not_started");
@@ -502,7 +502,7 @@ function App() {
 }
 
 /** Local test-phase auth (user-approved 2026-09-30): open registration, username+password,
- * no email verification/recovery — both come with the hosted/Supabase phase. */
+ * no email verification/recovery, both come with the hosted/Supabase phase. */
 function AuthScreen(props: { onSkip: () => void; onAuth: (username: string, password: string, mode: "login" | "register") => Promise<void> }) {
   const { onSkip, onAuth } = props;
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -529,7 +529,7 @@ function AuthScreen(props: { onSkip: () => void; onAuth: (username: string, pass
   </div>;
 }
 
-/** §7.8: fast custom-exercise path — name + muscle group required; everything else optional under "More options". */
+/** §7.8: fast custom-exercise path, name + muscle group required; everything else optional under "More options". */
 function CustomExerciseModal(props: { onClose: () => void; unit: "kg" | "lb"; workoutId: string | null; onCreated: (id: string) => void }) {
   const { onClose, unit, workoutId, onCreated } = props;
   const [name, setName] = useState("");
@@ -707,7 +707,7 @@ function ExerciseLogger(props: {
   const perRepKg = (log.base_weight_kg_snapshot ?? 0) + (log.weight_kg ?? 0) * (log.per_side_snapshot ? 2 : 1);
   const repsOnly = perRepKg === 0;
   const load = repsOnly ? cap : perRepKg * cap;
-  // recommendation (§6.7): last eligible log of this exercise — live via useLiveQuery so it
+  // recommendation (§6.7): last eligible log of this exercise, live via useLiveQuery so it
   // refreshes after completing a set within the same visit (user-reported gap).
   const liveHistory = useLiveQuery(() => db.exercise_logs.where("exercise_id").equals(exercise.id).filter(x => !x.deleted_at).toArray(), [exercise.id], [] as ExerciseLog[]);
   const history = liveHistory ?? [];
@@ -744,7 +744,7 @@ function ExerciseLogger(props: {
   const [warmupNeeded, setWarmupNeeded] = useState(false);
   useEffect(() => { setWarmupNeeded(false); setPainAck(false); }, [log.id]);
   // Warm-up reminder timing (user-revised 2026-10): fires when the weight input is
-  // LEFT (blur, or scrolled out of view) with a valid weight entered — after the
+  // LEFT (blur, or scrolled out of view) with a valid weight entered, after the
   // working weight is committed but before the first rep. Doesn't interrupt weight
   // typing, doesn't wait for rep entry.
   function onWeightCommitted(committed?: number | null) {
@@ -798,20 +798,20 @@ function ExerciseLogger(props: {
       <label className="field-label" htmlFor="working-weight">Working weight <span>{displayUnit}{exercise.per_side ? " per side" : ""}</span></label>
       <div className="weight-entry"><button onClick={() => void onChange({ weight_entered: Math.max(0, (weight ?? 0) - 2.5) })}>−</button><input id="working-weight" ref={weightInputRef} inputMode="decimal" type="number" step="any" value={displayWeightValue ?? ""} placeholder={recommendation.direction === "no_history" ? "Enter weight" : recommendation.direction === "increase" ? "↑ heavier" : recommendation.direction === "decrease" ? "↓ lighter" : "Same weight"} onBlur={() => onWeightCommitted()} onChange={e => void onChange({ weight_entered: e.target.value === "" ? null : Number(e.target.value) })} /><button onClick={() => void onChange({ weight_entered: (weight ?? 0) + 2.5 })}>＋</button></div>
       <p className="small-note recommendation">{recommendation.message}</p>
-      <p className="small-note">Same weight for all partial sets. Change it next session, not mid-set. Each partial set: as many reps as possible — targets are a weight check, not a stopping point.</p>
-      {warmupRequired && warmups.length > 0 && <div className="warmup-block"><span className="overline">WARM-UP SUGGESTION</span>{warmups.map((row, i) => <div key={i} className="warmup-row">{row.label}</div>)}<small className="warmup-note">Rounded down to the nearest {displayUnit} — pick the nearest weight this exercise has.</small></div>}
+      <p className="small-note">Same weight for all partial sets. Change it next session, not mid-set. Each partial set: as many reps as possible, targets are a weight check, not a stopping point.</p>
+      {warmupRequired && warmups.length > 0 && <div className="warmup-block"><span className="overline">WARM-UP SUGGESTION</span>{warmups.map((row, i) => <div key={i} className="warmup-row">{row.label}</div>)}<small className="warmup-note">Rounded down to the nearest {displayUnit}, pick the nearest weight this exercise has.</small></div>}
       <div className="miniset-list">{log.miniset_reps.map((_value, i) => <label className="miniset-row" key={i}><span className="miniset-name">PARTIAL SET {i + 1}<small>{newWeight ? "★ new weight" : `Range ${targets.miniset_targets[i]?.join("–")} · to failure${previous?.miniset_reps[i] != null ? ` · last: ${previous.miniset_reps[i]}` : ""}`}</small></span><button type="button" className="rep-step" aria-label={`Decrease partial set ${i + 1}`} onClick={() => { const n = Math.max(0, (shownReps[i] ?? 0) - 1); void updateMinisetRep(log.id, i, n); }}>−</button><input className="reps-input" inputMode="numeric" type="number" min="0" value={shownReps[i] ?? ""} onChange={e => { void updateMinisetRep(log.id, i, e.target.value === "" ? null : Number(e.target.value)); }} /><button type="button" className="rep-step" aria-label={`Increase partial set ${i + 1}`} onClick={() => { const n = (shownReps[i] ?? 0) + 1; void updateMinisetRep(log.id, i, n); }}>＋</button><span className="reps-unit">reps</span></label>)}</div>
       <div className="rating-row"><span className="overline">RATING</span>{[1, 1.5, 2, 2.5, 3].map(r => <button key={r} className={log.rating === r ? "rating-chip selected" : "rating-chip"} onClick={() => void onChange({ rating: r })}>{r}</button>)}<small>1 = easy · 2 = right · 3 = too heavy</small></div>
       <div className="result-panel"><span className="overline">LIVE RESULT</span><strong>{reps} <small>REPS</small> · {fmtLoad(load)} <small>{repsOnly ? "REPS" : `${displayUnit} LOAD`}</small>{result?.kind === "star" && <span className="star"> ★</span>}{result?.kind === "trend" && <span className={`trend trend-${result.trend}`}>{result.trend === "improved" ? " ↑" : result.trend === "same" ? " =" : " ↓"}{result.pct !== null && ` ${result.pct > 0 ? "+" : ""}${result.pct}%`}</span>}{result?.kind === "baseline" && <span className="trend baseline"> Fresh start</span>}</strong><span className="save-indicator" aria-live="polite">Autosaves</span><p>{reps >= targets.total_max ? `At/above target: go heavier next time. Reps past ${targets.total_max} don't count.` : reps >= targets.total_min ? (result?.kind === "star" ? "★ Heavier weight and reps in range. That's progress." : "In range. Beat this total next time.") : "Below target: go lighter next time."}</p></div>
       <div className="logger-actions">
         <label className="pain-check"><input type="checkbox" checked={log.pain} onChange={e => void onChange({ pain: e.target.checked })} /> PAIN</label>
         <label className="pain-check" title="Warm-up sets for this exercise in this workout"><input type="checkbox" checked={warmupRequired} onChange={e => void onToggleWarmup(e.target.checked)} /> WARM-UP</label>
-        {log.pain && <input className="pain-note" placeholder="Where / what hurt? (required — future you needs this)" value={log.pain_note} onChange={e => void onChange({ pain_note: e.target.value })} />}
+        {log.pain && <input className="pain-note" placeholder="Where / what hurt? (required, future you needs this)" value={log.pain_note} onChange={e => void onChange({ pain_note: e.target.value })} />}
         <button className="button-secondary" onClick={onSkip}>Skip today</button>
         <button className="button-secondary" onClick={() => setSwapOpen(true)}>Swap exercise</button>
         <button className="button-secondary" onClick={onBack}>Back to workout</button>
         <button className="button-primary" onClick={() => { if (log.pain && !log.pain_note.trim()) { setPainNoteMissing(true); return; } setPainNoteMissing(false); onDone(); }}>{log.pain && !log.pain_note.trim() ? "Add pain note to finish" : "Exercise done"}</button>
-        {painNoteMissing && <p className="small-note red-note" style={{ margin: "4px 0 0" }}>You flagged pain — write where/what so next session warns you properly.</p>}
+        {painNoteMissing && <p className="small-note red-note" style={{ margin: "4px 0 0" }}>You flagged pain, write where/what so next session warns you properly.</p>}
       </div></div>
       <aside className="timer-card"><span className="overline">REST TIMER</span><strong className="timer-digits">{String(Math.floor(remaining / 60)).padStart(2, "0")}:{String(remaining % 60).padStart(2, "0")}</strong><button className="timer-button" onClick={onStartTimer}>{timerEnd ? "Restart" : "Start 27 sec"}</button>{timerEnd && <button className="timer-stop" onClick={onStopTimer}>Stop timer</button>}<p>Start as soon as the weight is down.</p></aside>
     </div>
@@ -831,8 +831,8 @@ function WarmupCircuitView(props: { rows: Array<{ name: string; label: string; s
     <button className="back-link" onClick={onBack}>‹ Return to Workout</button>
     <p className="overline">{workoutName} · WARM-UP CIRCUIT</p>
     <h1>Warm-up circuit</h1>
-    <p className="lede">Rotate through all exercises' warm-up sets in one pass — light weights, little rest needed. Working sets come after.</p>
-    <p className="small-note">Weights are based on each exercise's last known target weight — from the previous workout, or what you've already entered this session. If you want different working weights today, enter them in the exercises first, then come back here.</p>
+    <p className="lede">Rotate through all exercises' warm-up sets in one pass, light weights, little rest needed. Working sets come after.</p>
+    <p className="small-note">Weights are based on each exercise's last known target weight, from the previous workout, or what you've already entered this session. If you want different working weights today, enter them in the exercises first, then come back here.</p>
     <div className="circuit-list">{rows.map((row, i) => (
       <label className={`circuit-row${done.has(i) ? " done" : ""}`} key={i}>
         <input type="checkbox" checked={done.has(i)} onChange={() => toggle(i)} />
@@ -840,7 +840,7 @@ function WarmupCircuitView(props: { rows: Array<{ name: string; label: string; s
         <strong>{row.label}</strong>
       </label>
     ))}</div>
-    {done.size === rows.length && rows.length > 0 && <div className="banner">All warm-ups done — hit the working sets.</div>}
+    {done.size === rows.length && rows.length > 0 && <div className="banner">All warm-ups done, hit the working sets.</div>}
   </section>;
 }
 
@@ -854,7 +854,7 @@ function WarmupDialog(props: { onOk: () => void; onSkip?: () => void; onSkipAlwa
   const refocus = () => window.setTimeout(() => { document.getElementById(weightInputId)?.focus(); }, 60);
   const handleOk = () => { onOk(); refocus(); };
   const handleSkip = () => { (onSkipAlways ?? onSkip)?.(); refocus(); };
-  return <div className="modal-backdrop"><div className="modal-panel"><h2>Warm-up sets done?</h2>{onSkip && <p className="small-note">If this exercise doesn't need warming up (e.g. second exercise for the same muscles), you can skip the reminder.</p>}<div className="modal-actions">{onSkip && <button className="button-secondary" onClick={handleSkip}>{onSkipAlways ? "Skip — not needed for this exercise" : "Skip"}</button>}<button className="button-primary" ref={el => { okBtnRef.current = el; }} onClick={handleOk}>Done</button></div><button className="link-button" onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); onOk(); }}>Don't remind me again (turn off in Settings)</button></div></div>;
+  return <div className="modal-backdrop"><div className="modal-panel"><h2>Warm-up sets done?</h2>{onSkip && <p className="small-note">If this exercise doesn't need warming up (e.g. second exercise for the same muscles), you can skip the reminder.</p>}<div className="modal-actions">{onSkip && <button className="button-secondary" onClick={handleSkip}>{onSkipAlways ? "Skip, not needed for this exercise" : "Skip"}</button>}<button className="button-primary" ref={el => { okBtnRef.current = el; }} onClick={handleOk}>Done</button></div><button className="link-button" onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); onOk(); }}>Don't remind me again (turn off in Settings)</button></div></div>;
 }
 
 function EditableName(props: { value: string; onSave: (name: string) => void; className?: string }) {
@@ -936,7 +936,7 @@ function ProgramsView(props: {
         {isLockedDefault && <p className="small-note">This is a default program maintained by the team. Clone it to make an editable copy with your own changes.</p>}
       </article>;
     })}</div>
-    {cloneSource && <div className="modal-backdrop" onClick={() => setCloneSource(null)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">CLONE PROGRAM</p><h2>Clone {cloneSource.name}</h2></div><button className="close-button" onClick={()=>setCloneSource(null)}>×</button></div><p className="lede">Creates a copy with all workout splits and exercises. The clone is fully editable while the original stays untouched.</p><label className="form-label">Name for the clone<input value={cloneName} onChange={e=>setCloneName(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && cloneName.trim()) { await cloneFn(cloneSource.id, cloneName); } }} /></label><label className="clone-history-check"><input type="checkbox" checked={cloneKeepHistory} onChange={e=>setCloneKeepHistory(e.target.checked)} /> Keep historical performance for the exercises</label><p className="small-note">Unchecked: every exercise starts with a clean trend — use this if the clone will change rest periods, sets or reps significantly enough that old numbers no longer compare. Checked: "last time" and stagnation follow the exercise as usual.</p><div className="modal-actions"><button className="button-secondary" onClick={()=>setCloneSource(null)}>Cancel</button><button className="button-primary" onClick={async () => { await cloneFn(cloneSource.id, cloneName); }}>Create clone</button></div></div></div>}
+    {cloneSource && <div className="modal-backdrop" onClick={() => setCloneSource(null)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">CLONE PROGRAM</p><h2>Clone {cloneSource.name}</h2></div><button className="close-button" onClick={()=>setCloneSource(null)}>×</button></div><p className="lede">Creates a copy with all workout splits and exercises. The clone is fully editable while the original stays untouched.</p><label className="form-label">Name for the clone<input value={cloneName} onChange={e=>setCloneName(e.target.value)} onKeyDown={async e => { if (e.key === "Enter" && cloneName.trim()) { await cloneFn(cloneSource.id, cloneName); } }} /></label><label className="clone-history-check"><input type="checkbox" checked={cloneKeepHistory} onChange={e=>setCloneKeepHistory(e.target.checked)} /> Keep historical performance for the exercises</label><p className="small-note">Unchecked: every exercise starts with a clean trend, use this if the clone will change rest periods, sets or reps significantly enough that old numbers no longer compare. Checked: "last time" and stagnation follow the exercise as usual.</p><div className="modal-actions"><button className="button-secondary" onClick={()=>setCloneSource(null)}>Cancel</button><button className="button-primary" onClick={async () => { await cloneFn(cloneSource.id, cloneName); }}>Create clone</button></div></div></div>}
     {deleteProgramConfirm && <div className="modal-backdrop" onClick={() => setDeleteProgramConfirm(null)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">DELETE PROGRAM</p><h2>Delete {deleteProgramConfirm.name}?</h2></div><button className="close-button" onClick={()=>setDeleteProgramConfirm(null)}>×</button></div><p className="lede">The program and its workout splits are removed. Exercises and their training history are kept and stay available.</p><div className="modal-actions"><button className="button-secondary" onClick={()=>setDeleteProgramConfirm(null)}>Keep it</button><button className="button-primary" onClick={() => { void repo.deleteProgram(deleteProgramConfirm.id); setDeleteProgramConfirm(null); }}>Delete program</button></div></div></div>}
   </section>;
 }
@@ -990,7 +990,7 @@ function HistoryView(props: { exercises: Exercise[]; unit: "kg" | "lb" }) {
         <div className="date-row"><button className="button-secondary" onClick={() => setDeleteConfirm(s)}>Delete session</button></div>
       </div>}
     </article>)}
-    {deleteConfirm && <div className="modal-backdrop" onClick={() => setDeleteConfirm(null)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">DELETE SESSION</p><h2>Delete {deleteConfirm.workout_name_snapshot}?</h2></div><button className="close-button" onClick={()=>setDeleteConfirm(null)}>×</button></div><p className="lede">{deleteConfirm.started_at ? new Date(deleteConfirm.started_at).toLocaleDateString() : ""} — all weights and reps of this session will be permanently deleted. Your exercise history and programs stay untouched.</p><div className="modal-actions"><button className="button-secondary" onClick={()=>setDeleteConfirm(null)}>Keep it</button><button className="button-primary" onClick={() => { void repo.deleteSession(deleteConfirm.id); setOpenSession(null); setDeleteConfirm(null); }}>Delete session</button></div></div></div>}
+    {deleteConfirm && <div className="modal-backdrop" onClick={() => setDeleteConfirm(null)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">DELETE SESSION</p><h2>Delete {deleteConfirm.workout_name_snapshot}?</h2></div><button className="close-button" onClick={()=>setDeleteConfirm(null)}>×</button></div><p className="lede">{deleteConfirm.started_at ? new Date(deleteConfirm.started_at).toLocaleDateString() : ""}, all weights and reps of this session will be permanently deleted. Your exercise history and programs stay untouched.</p><div className="modal-actions"><button className="button-secondary" onClick={()=>setDeleteConfirm(null)}>Keep it</button><button className="button-primary" onClick={() => { void repo.deleteSession(deleteConfirm.id); setOpenSession(null); setDeleteConfirm(null); }}>Delete session</button></div></div></div>}
     {dataMode === "exercises" && <div className="exercise-list">{exercises.map(ex => <article className="exercise-row" key={ex.id}>
       <div className="exercise-info"><h3>{ex.name}</h3><p>{muscleGroupName(ex.muscle_group)} · {(logs ?? []).filter(l => l.exercise_id === ex.id && l.status === "completed").length} sessions logged</p></div>
       <button className="row-action" onClick={() => setViewExercise(viewExercise === ex.id ? null : ex.id)}>{viewExercise === ex.id ? "▾" : "▸"}</button>
@@ -1053,9 +1053,9 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
     <p className="overline">PREFERENCES</p><h1>Settings</h1>
     <div className="settings-card"><strong>Units</strong><p>Weights are entered and displayed in this unit. History re-renders, nothing is rewritten.</p><div className="unit-switch"><button className={unit === "kg" ? "selected" : ""} onClick={() => setUnits("kg")}>Kilograms · kg</button><button className={unit === "lb" ? "selected" : ""} onClick={() => setUnits("lb")}>Pounds · lb</button></div></div>
     <div className="settings-card"><strong>Theme</strong><p>{({ system: "Follow system", light: "Light", dark: "Dark" })[theme]}</p><div className="unit-switch">{(["system", "light", "dark"] as const).map(t => <button key={t} className={theme === t ? "selected" : ""} onClick={() => { setTheme(t); void repo.patchSettings({ theme: t }); }}>{({ system: "System", light: "Light", dark: "Dark" })[t]}</button>)}</div></div>
-    <div className="settings-card"><strong>Data</strong><p>Backup/restore all data (JSON), or your training log as a spreadsheet (CSV). CSV import accepts the same column shape — <button className="link-button" onClick={() => void doDownloadTemplate()}>download the template</button> to fill in past sessions.</p><div className="unit-switch"><button className="button-secondary" onClick={() => void doExportJson()} disabled={busyExport}>Export JSON</button><button className="button-secondary" onClick={() => void doExportCsv()} disabled={busyExport}>Export CSV</button><label className="button-secondary import-label">Import JSON<input type="file" accept="application/json" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImport(f); }} /></label><label className="button-secondary import-label">Import CSV<input type="file" accept="text/csv" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImportCsv(f); }} /></label></div>{csvReport && <p className="small-note">{csvReport}</p>}</div>
-    <div className="settings-card"><strong>Account</strong><p>{authUser ? <>Logged in as <strong>{authUser}</strong> — data syncs to the server on every change and follows you to any device you log in from.</> : "Using local storage only — data lives in this browser. Log in or create an account to sync across devices."}</p>{authUser ? <div className="unit-switch"><button className="button-secondary" onClick={onLogout}>Log out</button></div> : <div className="unit-switch"><button className="button-secondary" onClick={onShowAuth}>Log in / Create account</button></div>}</div>
-    <div className="settings-card"><strong>Warm-up reminder</strong><p>Before each exercise's first working set, the app asks "warm-up sets done?" — helpful while learning the habit, noise once it's routine. This only turns off the reminder; per-exercise warm-ups are controlled in the exercise view.</p><div className="unit-switch"><button className={settings?.warmup_reminder_enabled !== false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: true }); window.location.reload(); }}>On</button><button className={settings?.warmup_reminder_enabled === false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); window.location.reload(); }}>Off</button></div></div>
+    <div className="settings-card"><strong>Data</strong><p>Backup/restore all data (JSON), or your training log as a spreadsheet (CSV). CSV import accepts the same column shape, <button className="link-button" onClick={() => void doDownloadTemplate()}>download the template</button> to fill in past sessions.</p><div className="unit-switch"><button className="button-secondary" onClick={() => void doExportJson()} disabled={busyExport}>Export JSON</button><button className="button-secondary" onClick={() => void doExportCsv()} disabled={busyExport}>Export CSV</button><label className="button-secondary import-label">Import JSON<input type="file" accept="application/json" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImport(f); }} /></label><label className="button-secondary import-label">Import CSV<input type="file" accept="text/csv" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImportCsv(f); }} /></label></div>{csvReport && <p className="small-note">{csvReport}</p>}</div>
+    <div className="settings-card"><strong>Account</strong><p>{authUser ? <>Logged in as <strong>{authUser}</strong>, data syncs to the server on every change and follows you to any device you log in from.</> : "Using local storage only, data lives in this browser. Log in or create an account to sync across devices."}</p>{authUser ? <div className="unit-switch"><button className="button-secondary" onClick={onLogout}>Log out</button></div> : <div className="unit-switch"><button className="button-secondary" onClick={onShowAuth}>Log in / Create account</button></div>}</div>
+    <div className="settings-card"><strong>Warm-up reminder</strong><p>Before each exercise's first working set, the app asks "warm-up sets done?", helpful while learning the habit, noise once it's routine. This only turns off the reminder; per-exercise warm-ups are controlled in the exercise view.</p><div className="unit-switch"><button className={settings?.warmup_reminder_enabled !== false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: true }); window.location.reload(); }}>On</button><button className={settings?.warmup_reminder_enabled === false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); window.location.reload(); }}>Off</button></div></div>
     <div className="settings-card"><strong>Default programs</strong><p>Default programs are curated by the team and read-only; clone one to make it your own. Hiding them removes them from the Programs tab. Unchecking shows every default again and resets any individual hides.</p><label className="clone-history-check"><input type="checkbox" ref={el => { if (el) el.indeterminate = settings?.hide_default_programs !== 1 && (settings?.hidden_default_program_ids?.length ?? 0) > 0; }} checked={settings?.hide_default_programs === 1} onChange={e => { if (e.target.checked) void repo.patchSettings({ hide_default_programs: 1 }); else void repo.patchSettings({ hide_default_programs: 0, hidden_default_program_ids: [] }); window.location.reload(); }} /> Hide all default programs</label></div>
     <div className="settings-card"><strong>Training method</strong><p>{PROTOCOL_NAME} · 27-second rests · three partial sets per exercise</p></div>
     <div className="settings-card"><strong>About</strong><p>{APP_NAME} {APP_VERSION} · data stored locally in this browser</p><p className="small-note">This app provides general training information, not medical advice. Consult a doctor before starting a demanding program. Training to failure carries risk; train at your own responsibility.</p></div>
@@ -1074,7 +1074,7 @@ function ExtraView(props: { slug: string | null; onOpen: (slug: string | null) =
   const open = openSlug ? articleBySlug(openSlug) : undefined;
   return <section className="extra-view">
     {/* Desktop: persistent sidebar. Mobile (≤760px): sidebar hidden; "All articles" button
-        + full-screen list instead — description first, then picks, then the button. */}
+        + full-screen list instead: description first, then picks, then the button. */}
     <div className="extra-layout">
       <aside className="extra-sidebar">
         <span className="overline">ALL ARTICLES</span>
@@ -1096,7 +1096,7 @@ function ExtraHome(props: { onOpen: (slug: string) => void; popular: string[]; o
   return <div className="extra-home-content">
     <p className="overline">FROM THE PROFECTUS TEAM</p>
     <h1>Extra information for those who seek it.</h1>
-    <p className="lede">You don't need any of this. Everything required to run the program is in the Guide, and the app handles the rest. Ignore this tab entirely and you'll build muscle just the same. But if you want the ideas, the reasoning and the experience behind the method — the why under the instructions — this is where it lives.</p>
+    <p className="lede">You don't need any of this. Everything required to run the program is in the Guide, and the app handles the rest. Ignore this tab entirely and you'll build muscle just the same. But if you want the ideas, the reasoning and the experience behind the method, the why under the instructions, this is where it lives.</p>
     <button className="button-primary all-articles-button" onClick={onOpenAll}>All articles ({articles.length})</button>
     <div className="extra-section"><span className="overline">TEAM RECOMMENDATIONS</span>{picks.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>
     {popList.length > 0 && <div className="extra-section"><span className="overline">MOST READ</span>{popList.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>}

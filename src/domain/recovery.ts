@@ -1,7 +1,7 @@
 // Recovery-modelled rep targets (research-based, SPEC §7.8 exercise editor).
 //
 // Physiology: between mini-sets the phosphagen system (ATP-PCr) recovers
-// exponentially — ~50% resynthesis at 30 s, ~85% at 60 s, ~93% at 90 s,
+// exponentially, ~50% resynthesis at 30 s, ~85% at 60 s, ~93% at 90 s,
 // ~97% at 180 s (Bogdanis et al. 1995; fast-component half-time ~21-22 s,
 // Harris et al. 1976). Rep performance does not fall proportionally to PCr,
 // because anaerobic glycolysis keeps contributing: retention per rest is

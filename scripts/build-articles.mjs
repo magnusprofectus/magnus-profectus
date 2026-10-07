@@ -1,5 +1,5 @@
 
-// scripts/build-articles.mjs — split ARTICLES.md into article files + founderPicks
+// scripts/build-articles.mjs, split ARTICLES.md into article files + founderPicks
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 const root = new URL("..", import.meta.url).pathname;
 const src = readFileSync(`${root}/ARTICLES.md`, "utf8");

@@ -83,7 +83,7 @@ class LocalDatabase extends Dexie {
       sessions: "id, user_id, program_id, workout_id, status, started_at, updated_at, _dirty",
       exercise_logs: "id, user_id, session_id, exercise_id, status, completed_at, updated_at, _dirty",
     });
-    // v14: default (curated) programs — same shapes, new optional fields (no index change needed).
+    // v14: default (curated) programs, same shapes, new optional fields (no index change needed).
     this.version(14).stores({
       user_settings: "id, user_id, updated_at, _dirty",
       exercises: "id, user_id, name, muscle_group, library_key, archived_at, updated_at, _dirty",
