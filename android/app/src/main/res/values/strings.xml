@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Magnus Profectus</string>
+    <string name="title_activity_main">Magnus Profectus</string>
+    <string name="package_name">com.magnusprofectus.app</string>
+    <string name="custom_url_scheme">com.magnusprofectus.app</string>
+</resources>
