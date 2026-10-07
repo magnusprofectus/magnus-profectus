@@ -13,9 +13,10 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
-        <!-- Android 15+ forces edge-to-edge for SDK 35 apps; opt out so the app
-             owns the window between the system bars, not behind them. -->
-        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+        <!-- The app draws edge-to-edge (Android 15+ requirement); the window
+             background must match the app background so the system-bar areas
+             around the padded WebView blend in. -->
+        <item name="android:windowBackground">#FF101311</item>
     </style>
 
 
