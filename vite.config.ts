@@ -4,7 +4,11 @@ import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
 import { APP_NAME, APP_SHORT_NAME, APP_SLUG } from "./src/config/app.ts";
 
+// Public Pages deployment lives under /magnus-profectus/ (subpath), everything else at "/".
+const base = process.env.PAGES_BASE || "/";
+
 export default defineConfig({
+  base,
   server: { proxy: { "/api": "http://127.0.0.1:5183" } },
   plugins: [
     react(),
@@ -19,10 +23,10 @@ export default defineConfig({
         theme_color: "#101311",
         background_color: "#101311",
         display: "standalone",
-        start_url: "/",
-        scope: "/",
+        start_url: base,
+        scope: base,
         id: APP_SLUG,
-        icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
+        icons: [{ src: `${base}icon.svg`, sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
       },
       workbox: {
         globPatterns: ["**/*.{js,css,svg,png,md}"],
