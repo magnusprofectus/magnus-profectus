@@ -7,7 +7,7 @@ import { activateProgram } from "./data/programs";
 import { createWorkout } from "./data/programs";
 import { finishSession, saveLog, startOrResumeSession, updateMinisetRep } from "./data/session";
 import * as repo from "./data/repo";
-import { maybeAutosave, saveBackup } from "./data/backup";
+import { exportFile, maybeAutosave, saveBackup } from "./data/backup";
 import { convert, displayValue, formatNumber } from "./domain/units";
 import { cappedLoadKg, cappedReps, totalReps } from "./domain/load";
 import { calculateWarmups } from "./domain/warmup";
@@ -203,7 +203,7 @@ function App() {
       const target = sessionLog?.weight_entered ?? logs.filter(x => x.exercise_id === ex.id && x.status === "completed" && !x.deleted_at).sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0]?.weight_entered ?? null;
       if (target === null) { missing.push(ex.name); continue; }
       const unit = sessionLog?.weight_unit ?? ex.increment_unit;
-      const warmups = calculateWarmups({ workingEntry: target, workingUnit: unit, baseWeight: ex.base_weight, baseWeightUnit: ex.base_weight_unit, perSide: ex.per_side, scheme: settings?.warmup_scheme ?? [{ pct: 0.5, reps: 15 }, { pct: 0.75, reps: 7 }, { pct: 0.9, reps: 3 }] });
+      const warmups = calculateWarmups({ workingEntry: target, workingUnit: unit, labelUnit: unit, baseWeight: ex.base_weight, baseWeightUnit: ex.base_weight_unit, perSide: ex.per_side, scheme: settings?.warmup_scheme ?? [{ pct: 0.5, reps: 15 }, { pct: 0.75, reps: 7 }, { pct: 0.9, reps: 3 }] });
       rows.push({ name: ex.name, ex, log: sessionLog ?? null, warmups });
     }
     if (missing.length > 0) return { available: false, reason: "missing_weights", missing, rows: [] };
@@ -212,7 +212,7 @@ function App() {
     const flat: Array<{ name: string; label: string; setNo: number; pct: number }> = [];
     for (let s = 0; s < maxSets; s++) for (const r of rows) { const wu = r.warmups[s]; if (wu) flat.push({ name: r.name, label: wu.label, setNo: s + 1, pct: wu.pct }); }
     return { available: true, reason: "ok", rows: flat };
-  }, [currentSession, joined, warmupRequired, sessionLogs, allLogs, settings?.warmup_scheme]);
+  }, [currentSession, joined, warmupRequired, sessionLogs, allLogs, settings?.warmup_scheme, unit]);
   const circuitUnavailableReason = circuitData.available ? "" : circuitData.reason === "no_session" ? "Start a session first, the circuit belongs to a running workout." : circuitData.reason === "no_warmup" ? "No exercise in this workout has warm-ups enabled (toggle WARM-UP per exercise)." : `Enter target weights for the warm-up exercises (${circuitData.missing?.join(", ") ?? ""}) in this session, or complete one full workout first, next time the weights are known and the circuit becomes available.`;
   const rowState = useMemo(() => {
     const logs = allLogs ?? [];
@@ -763,7 +763,7 @@ function ExerciseLogger(props: {
     document.addEventListener("pointerdown", onPointer, { passive: true });
     return () => document.removeEventListener("pointerdown", onPointer);
   });
-  const warmups = calculateWarmups({ workingEntry: weight, workingUnit: log.weight_unit, baseWeight: exercise.base_weight, baseWeightUnit: exercise.base_weight_unit, perSide: exercise.per_side, scheme: [{ pct: 0.5, reps: 15 }, { pct: 0.75, reps: 7 }, { pct: 0.9, reps: 3 }] });
+  const warmups = calculateWarmups({ workingEntry: weight, workingUnit: log.weight_unit, labelUnit: displayUnit, baseWeight: exercise.base_weight, baseWeightUnit: exercise.base_weight_unit, perSide: exercise.per_side, scheme: [{ pct: 0.5, reps: 15 }, { pct: 0.75, reps: 7 }, { pct: 0.9, reps: 3 }] });
   const remaining = timerEnd ? Math.ceil(remainingMs({ endsAt: timerEnd, mode: "miniset", startedAt: null }, now) / 1000) : 0;
   const lastWeight = previous?.weight_entered ?? null;
   const newWeight = weight !== null && lastWeight !== null && weight !== lastWeight;
@@ -1002,19 +1002,13 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
   async function doExportJson() {
     setBusyExport(true);
     const bundle = await repo.exportAll();
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `rp-tracker-export-${new Date().toISOString().slice(0, 10)}.json`; a.click();
-    URL.revokeObjectURL(url);
+    setCsvReport(await exportFile(`magnus-profectus-export-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(bundle, null, 2), "application/json"));
     setBusyExport(false);
   }
   async function doExportCsv() {
     setBusyExport(true);
     const csv = await repo.exportLogsCsv();
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `rp-tracker-logs-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    setCsvReport(await exportFile(`magnus-profectus-logs-${new Date().toISOString().slice(0, 10)}.csv`, csv, "text/csv"));
     setBusyExport(false);
   }
   async function doDownloadTemplate() {
@@ -1054,10 +1048,10 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
   return <section>
     <p className="overline">PREFERENCES</p><h1>Settings</h1>
     <div className="settings-card"><strong>Units</strong><p>Weights are entered and displayed in this unit. History re-renders, nothing is rewritten.</p><div className="unit-switch"><button className={unit === "kg" ? "selected" : ""} onClick={() => setUnits("kg")}>Kilograms · kg</button><button className={unit === "lb" ? "selected" : ""} onClick={() => setUnits("lb")}>Pounds · lb</button></div></div>
-    <div className="settings-card"><strong>Theme</strong><p>{({ system: "Follow system", light: "Light", dark: "Dark" })[theme]}</p><div className="unit-switch">{(["system", "light", "dark"] as const).map(t => <button key={t} className={theme === t ? "selected" : ""} onClick={() => { setTheme(t); void repo.patchSettings({ theme: t }); }}>{({ system: "System", light: "Light", dark: "Dark" })[t]}</button>)}</div></div>
+    <div className="settings-card"><strong>Theme</strong><p>{theme === "light" ? "Dark (light mode is not built yet)" : ({ system: "Follow system", dark: "Dark" } as Record<string, string>)[theme]}</p><div className="unit-switch">{(["system", "dark"] as const).map(t => <button key={t} className={theme === t ? "selected" : ""} onClick={() => { setTheme(t); void repo.patchSettings({ theme: t }); }}>{({ system: "System", dark: "Dark" } as Record<string, string>)[t]}</button>)}</div></div>
     <div className="settings-card"><strong>Data</strong><p>Backup/restore all data (JSON), or your training log as a spreadsheet (CSV). CSV import accepts the same column shape, <button className="link-button" onClick={() => void doDownloadTemplate()}>download the template</button> to fill in past sessions.</p><div className="unit-switch"><button className="button-secondary" onClick={() => void doExportJson()} disabled={busyExport}>Export JSON</button><button className="button-secondary" onClick={() => void doExportCsv()} disabled={busyExport}>Export CSV</button><label className="button-secondary import-label">Import JSON<input type="file" accept="application/json" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImport(f); }} /></label><label className="button-secondary import-label">Import CSV<input type="file" accept="text/csv" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImportCsv(f); }} /></label></div>{csvReport && <p className="small-note">{csvReport}</p>}</div>
     {(authUser || serverAvailable) && <div className="settings-card"><strong>Account</strong><p>{authUser ? <>Logged in as <strong>{authUser}</strong>, data syncs to the server on every change and follows you to any device you log in from.</> : "A sync server was detected. Log in or create an account to sync across devices."}</p>{authUser ? <div className="unit-switch"><button className="button-secondary" onClick={onLogout}>Log out</button></div> : <div className="unit-switch"><button className="button-secondary" onClick={onShowAuth}>Log in / Create account</button></div>}</div>}
-    <div className="settings-card"><strong>Local backups</strong><p>After each finished workout, save a JSON snapshot of everything (programs, exercises, full history) as a file. On Android the file lands in the device Documents folder, where Nextcloud or Syncthing folder sync can pick it up. The ten newest backups are kept.</p><div className="unit-switch"><button className={localBackups ? "selected" : ""} onClick={() => { const next = !localBackups; setLocalBackups(next); void repo.patchSettings({ local_backups: next }); }}>After each workout</button><button className="button-secondary" onClick={() => void saveBackup().then(r => setBackupReport(r.location === "file" ? `Saved ${r.saved} to the device Documents folder.` : `Downloaded ${r.saved}.`)).catch(() => setBackupReport("Backup failed."))}>Save backup now</button></div>{backupReport && <p className="small-note">{backupReport}</p>}</div>
+    <div className="settings-card"><strong>Local backups</strong><p>After each finished workout, save a JSON snapshot of everything (programs, exercises, full history) as a file. On Android the file lands in the device Documents folder, where Nextcloud or Syncthing folder sync can pick it up. The ten newest backups are kept.</p><div className="unit-switch"><button className={localBackups ? "selected" : ""} onClick={() => { const next = !localBackups; setLocalBackups(next); void repo.patchSettings({ local_backups: next }); }}>After each workout</button><button className="button-secondary" onClick={() => void saveBackup().then(r => setBackupReport(r.location === "file" ? `Saved ${r.saved} in ${r.path ?? "the app Documents folder"}. This is the app-private folder on Android 11+; use Share to put a copy anywhere.` : `Downloaded ${r.saved}.`)).catch(() => setBackupReport("Backup failed."))}>Save backup now</button></div>{backupReport && <p className="small-note">{backupReport}</p>}</div>
     <div className="settings-card"><strong>Sync server (optional)</strong><p>By default everything stays on this device. If you run your own sync server (see the project README), enter its address here and the app will reload using it. Leave the field empty to use the address the app itself is served from.</p><div style={{ display: "flex", gap: "8px" }}><input value={urlDraft} onChange={e => setUrlDraft(e.target.value)} placeholder="https://your-server.example" style={{ flex: "1 1 auto", minWidth: 0 }} /><button className="button-secondary" onClick={() => { sync.setServerUrl(urlDraft); window.location.reload(); }}>Save</button></div></div>
     <div className="settings-card"><strong>Warm-up reminder</strong><p>Before each exercise's first working set, the app asks "warm-up sets done?", helpful while learning the habit, noise once it's routine. This only turns off the reminder; per-exercise warm-ups are controlled in the exercise view.</p><div className="unit-switch"><button className={settings?.warmup_reminder_enabled !== false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: true }); window.location.reload(); }}>On</button><button className={settings?.warmup_reminder_enabled === false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); window.location.reload(); }}>Off</button></div></div>
     <div className="settings-card"><strong>Default programs</strong><p>Default programs are curated by the team and read-only; clone one to make it your own. Hiding them removes them from the Programs tab. Unchecking shows every default again and resets any individual hides.</p><label className="clone-history-check"><input type="checkbox" ref={el => { if (el) el.indeterminate = settings?.hide_default_programs !== 1 && (settings?.hidden_default_program_ids?.length ?? 0) > 0; }} checked={settings?.hide_default_programs === 1} onChange={e => { if (e.target.checked) void repo.patchSettings({ hide_default_programs: 1 }); else void repo.patchSettings({ hide_default_programs: 0, hidden_default_program_ids: [] }); window.location.reload(); }} /> Hide all default programs</label></div>

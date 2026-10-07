@@ -22,8 +22,13 @@ export function calculateWarmups(args: {
   baseWeightUnit: Unit | null;
   perSide: boolean;
   scheme: WarmupSchemeEntry[];
+  /** unit the LABELS should show (defaults to workingUnit). Stored math stays in
+   *  workingUnit; the label value is converted then rounded down in the label unit,
+   *  so an lb user sees whole lb suggestions instead of raw kg numbers. */
+  labelUnit?: Unit;
 }): WarmupRow[] {
   const { workingEntry, workingUnit, perSide, scheme } = args;
+  const labelUnit = args.labelUnit ?? workingUnit;
   const base = args.baseWeight === null ? 0 : convert(args.baseWeight, args.baseWeightUnit ?? workingUnit, workingUnit);
   const f = perSide ? 2 : 1;
   if (workingEntry === null) return scheme.map(x => ({ pct: x.pct, reps: x.reps, entry: null, label: `× ${x.reps} (set weight first)` }));
@@ -33,6 +38,7 @@ export function calculateWarmups(args: {
     const exact = (pct * workingReal - base) / f;
     // below the base weight (e.g. light % of a heavy bar) → base only
     const entry = exact <= 0 ? 0 : roundDownToUnit(exact);
-    return { pct, reps, entry, label: entry > 0 ? `${entry} ${workingUnit}${perSide ? " per side" : ""} × ${reps}` : `Base only × ${reps}` };
+    const labelEntry = entry > 0 ? roundDownToUnit(convert(entry, workingUnit, labelUnit)) : 0;
+    return { pct, reps, entry, label: entry > 0 ? `${labelEntry} ${labelUnit}${perSide ? " per side" : ""} × ${reps}` : `Base only × ${reps}` };
   });
 }

@@ -18,7 +18,7 @@ export async function buildBackupJson(): Promise<string> {
   return JSON.stringify(await exportAll(), null, 2);
 }
 
-export async function saveBackup(): Promise<{ saved: string; location: "file" | "download" }> {
+export async function saveBackup(): Promise<{ saved: string; location: "file" | "download"; path?: string }> {
   const json = await buildBackupJson();
   const name = backupFileName();
   try {
@@ -28,7 +28,10 @@ export async function saveBackup(): Promise<{ saved: string; location: "file" | 
       const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
       await Filesystem.writeFile({ path: name, data: json, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true });
       await pruneOld(Filesystem, Directory.Documents);
-      return { saved: name, location: "file" };
+      const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Documents });
+      // Documents on Android 11+ is the APP-PRIVATE folder, not the public one.
+      const publicPath = uri.replace(/^file:\/\//, "").replace(/\/.*\/Android\/data\//, "/Android/data/");
+      return { saved: name, location: "file", path: publicPath };
     }
   } catch { /* no native platform available, fall through to download */ }
   const blob = new Blob([json], { type: "application/json" });
@@ -50,6 +53,32 @@ async function pruneOld(fs: any, directory: unknown): Promise<void> {
       await fs.deleteFile({ path: n, directory });
     }
   } catch { /* pruning is best-effort, never blocks saving */ }
+}
+
+/** Write a file and hand it to the user: on Android through the share sheet
+ *  (WebView downloads silently do nothing), in the browser as a download.
+ *  The share sheet lets the user pick any destination: Nextcloud, Drive, Files. */
+export async function exportFile(name: string, content: string, mimeType: string): Promise<string> {
+  try {
+    const cap = await import("@capacitor/core");
+    const Cap = (cap as any).Capacitor;
+    if (Cap?.isNativePlatform?.()) {
+      const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+      const { Share } = await import("@capacitor/share");
+      const { uri } = await Filesystem.writeFile({ path: name, data: content, directory: Directory.Cache, encoding: Encoding.UTF8, recursive: true });
+      await Share.share({ title: name, url: uri, dialogTitle: "Save or send " + name });
+      return `Shared ${name}. Pick a destination in the sheet (Nextcloud, Files, Drive).`;
+    }
+  } catch (err) {
+    if ((err as any)?.message?.includes?.("cancel")) return "Share cancelled, nothing saved.";
+    /* fall through to browser download on any other error */
+  }
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+  return `Downloaded ${name}.`;
 }
 
 /** Called after a workout is finished. No-op unless the user enabled local backups. */
