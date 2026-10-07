@@ -1039,6 +1039,18 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
     const text = await file.text();
     try { const result = await repo.importAll(JSON.parse(text)); alert(`Imported ${result.merged} rows.`); } catch { alert("Import failed: invalid file."); }
   }
+  function computeDiagnostics(): string {
+    const vv = window.visualViewport;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);visibility:hidden";
+    document.body.appendChild(probe);
+    const ps = getComputedStyle(probe);
+    const out = `viewport ${window.innerWidth}x${window.innerHeight} | screen ${screen.width}x${screen.height} @${window.devicePixelRatio}x | visual ${vv ? Math.round(vv.width) + "x" + Math.round(vv.height) + " scale " + vv.scale.toFixed(2) + " offY " + Math.round(vv.offsetTop) : "n/a"} | insets T/B/L/R ${ps.paddingTop}/${ps.paddingBottom}/${ps.paddingLeft}/${ps.paddingRight} | dpr-pcss ${Math.round(window.innerWidth * window.devicePixelRatio)}`;
+    probe.remove();
+    return out;
+  }
+  const [diag, setDiag] = useState<string | null>(null);
+  useEffect(() => { if (!diag) return; setDiag(computeDiagnostics()); }, [diag]);
   return <section>
     <p className="overline">PREFERENCES</p><h1>Settings</h1>
     <div className="settings-card"><strong>Units</strong><p>Weights are entered and displayed in this unit. History re-renders, nothing is rewritten.</p><div className="unit-switch"><button className={unit === "kg" ? "selected" : ""} onClick={() => setUnits("kg")}>Kilograms · kg</button><button className={unit === "lb" ? "selected" : ""} onClick={() => setUnits("lb")}>Pounds · lb</button></div></div>
@@ -1050,6 +1062,7 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
     <div className="settings-card"><strong>Warm-up reminder</strong><p>Before each exercise's first working set, the app asks "warm-up sets done?", helpful while learning the habit, noise once it's routine. This only turns off the reminder; per-exercise warm-ups are controlled in the exercise view.</p><div className="unit-switch"><button className={settings?.warmup_reminder_enabled !== false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: true }); window.location.reload(); }}>On</button><button className={settings?.warmup_reminder_enabled === false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); window.location.reload(); }}>Off</button></div></div>
     <div className="settings-card"><strong>Default programs</strong><p>Default programs are curated by the team and read-only; clone one to make it your own. Hiding them removes them from the Programs tab. Unchecking shows every default again and resets any individual hides.</p><label className="clone-history-check"><input type="checkbox" ref={el => { if (el) el.indeterminate = settings?.hide_default_programs !== 1 && (settings?.hidden_default_program_ids?.length ?? 0) > 0; }} checked={settings?.hide_default_programs === 1} onChange={e => { if (e.target.checked) void repo.patchSettings({ hide_default_programs: 1 }); else void repo.patchSettings({ hide_default_programs: 0, hidden_default_program_ids: [] }); window.location.reload(); }} /> Hide all default programs</label></div>
     <div className="settings-card"><strong>Training method</strong><p>{PROTOCOL_NAME} · 27-second rests · three partial sets per exercise</p></div>
+    <div className="settings-card"><strong>Display diagnostics</strong><p className="small-note" style={{ wordBreak: "break-all" }}>{diag ?? <button className="button-secondary" onClick={() => setDiag("x")}>Show display info</button>}</p></div>
     <div className="settings-card"><strong>About</strong><p>{APP_NAME} {APP_VERSION} · data stored locally in this browser</p><p className="small-note">This app provides general training information, not medical advice. Consult a doctor before starting a demanding program. Training to failure carries risk; train at your own responsibility.</p></div>
   </section>;
 }
