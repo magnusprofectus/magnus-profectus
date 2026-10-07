@@ -22,12 +22,17 @@ public class MainActivity extends BridgeActivity {
     settings.setUseWideViewPort(false);
     settings.setLoadWithOverviewMode(false);
     // Android 15+ (targetSdk 35/36) forces edge-to-edge; on Android 16 the
-    // opt-out attribute is ignored, so handle insets the modern way: pad the
-    // WebView by the system bars + display cutout on every device, which keeps
-    // the app between the bars regardless of screen size or navigation mode.
+    // opt-out attribute is ignored, so handle insets the modern way: shift the
+    // WebView inside the system bars + display cutout. Margins, not padding:
+    // a WebView does not inset page content for its own padding, but margins
+    // resize the view, which the page then fills.
     ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
       Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-      v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+      android.view.ViewGroup.LayoutParams lp = v.getLayoutParams();
+      if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
+        ((android.view.ViewGroup.MarginLayoutParams) lp).setMargins(bars.left, bars.top, bars.right, bars.bottom);
+        v.setLayoutParams(lp);
+      }
       return WindowInsetsCompat.CONSUMED;
     });
   }
