@@ -66,8 +66,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Latest build
+          name: Latest build (${{ github.run_number }})
+          body: Build ${{ github.run_number }}, ${{ github.event.head_commit.timestamp }}
           files: magnus-profectus.apk
           make_latest: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
