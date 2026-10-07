@@ -1,0 +1,62 @@
+// Local backup snapshots: JSON dumps of the whole training store, written after
+// each workout when enabled (Settings > Data). Two backends share one code path:
+//  - Android APK (Capacitor): written to the device Documents directory, which
+//    Nextcloud/Syncthing folder sync can pick up. Keeps the newest KEEP files.
+//  - Browser/PWA: triggers a normal download (no persistent folder access there;
+//    automatic folder backup requires the APK wrapper, not the wrapper alone).
+import { exportAll, getSettings } from "./repo";
+
+const KEEP = 10;
+const PREFIX = "magnus-profectus-backup-";
+
+export function backupFileName(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${PREFIX}${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+}
+
+export async function buildBackupJson(): Promise<string> {
+  return JSON.stringify(await exportAll(), null, 2);
+}
+
+export async function saveBackup(): Promise<{ saved: string; location: "file" | "download" }> {
+  const json = await buildBackupJson();
+  const name = backupFileName();
+  try {
+    const cap = await import("@capacitor/core");
+    const Cap = (cap as any).Capacitor;
+    if (Cap?.isNativePlatform?.()) {
+      const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+      await Filesystem.writeFile({ path: name, data: json, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true });
+      await pruneOld(Filesystem, Directory.Documents);
+      return { saved: name, location: "file" };
+    }
+  } catch { /* no native platform available, fall through to download */ }
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+  return { saved: name, location: "download" };
+}
+
+async function pruneOld(fs: any, directory: unknown): Promise<void> {
+  try {
+    const res = await fs.readdir({ path: "", directory });
+    const backups = (res.files ?? [])
+      .map((f: any) => f.name as string)
+      .filter((n: string) => n.startsWith(PREFIX))
+      .sort();
+    for (const n of backups.slice(0, Math.max(0, backups.length - KEEP))) {
+      await fs.deleteFile({ path: n, directory });
+    }
+  } catch { /* pruning is best-effort, never blocks saving */ }
+}
+
+/** Called after a workout is finished. No-op unless the user enabled local backups. */
+export async function maybeAutosave(): Promise<void> {
+  try {
+    const s = await getSettings();
+    if (!s?.local_backups) return;
+    await saveBackup();
+  } catch { /* a failed backup must never break finishing a workout */ }
+}

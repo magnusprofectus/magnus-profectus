@@ -24,6 +24,8 @@ export interface UserSettings extends BaseRow {
   hide_default_programs?: 0 | 1;
   /** default programs hidden individually from the Programs tab */
   hidden_default_program_ids?: string[];
+  /** write a JSON snapshot of the whole store to device Documents (APK) / download (PWA) after each finished workout */
+  local_backups?: boolean;
 }
 export interface Exercise extends BaseRow {
   name: string;

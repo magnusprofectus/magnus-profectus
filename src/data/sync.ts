@@ -17,8 +17,18 @@ let serverUp = false;
 export const getUser = () => currentUser;
 export const isServerUp = () => serverUp;
 
+/** Base URL of the sync server. Empty = same origin (the server also serves the app).
+ *  Stored in localStorage because it must be known before any Dexie settings read. */
+let baseUrl = (typeof localStorage !== "undefined" ? localStorage.getItem("rp-sync-url") ?? "" : "");
+export function setServerUrl(url: string | null): void {
+  baseUrl = (url ?? "").trim().replace(/\/+$/, "");
+  if (baseUrl) localStorage.setItem("rp-sync-url", baseUrl);
+  else localStorage.removeItem("rp-sync-url");
+}
+export const getServerUrl = (): string => baseUrl;
+
 async function api(path: string, init?: RequestInit) {
-  const r = await fetch(path, { credentials: "same-origin", ...init });
+  const r = await fetch(`${baseUrl}${path}`, { credentials: "same-origin", ...init });
   const body = await r.json().catch(() => ({}));
   return { ok: r.ok, status: r.status, body };
 }

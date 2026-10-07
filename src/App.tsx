@@ -7,6 +7,7 @@ import { activateProgram } from "./data/programs";
 import { createWorkout } from "./data/programs";
 import { finishSession, saveLog, startOrResumeSession, updateMinisetRep } from "./data/session";
 import * as repo from "./data/repo";
+import { maybeAutosave, saveBackup } from "./data/backup";
 import { convert, displayValue, formatNumber } from "./domain/units";
 import { cappedLoadKg, cappedReps, totalReps } from "./domain/load";
 import { calculateWarmups } from "./domain/warmup";
@@ -267,8 +268,10 @@ function App() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [authState, setAuthState] = useState<"checking" | "anonymous" | "server">("checking");
   const [authUser, setAuthUser] = useState<string | null>(null);
-  const [skipAuthScreen, setSkipAuthScreen] = useState(false);
-  useEffect(() => { void sync.checkSession().then(({ user }) => { if (user) { setAuthUser(user.username); setAuthState("server"); void sync.pull(); } else setAuthState("anonymous"); }); }, []);
+  // Public v1 is offline-first: the auth screen is opt-in only (Settings), never shown on boot.
+  const [skipAuthScreen, setSkipAuthScreen] = useState(true);
+  const [serverAvailable, setServerAvailable] = useState(false);
+  useEffect(() => { void sync.checkSession().then(({ user, serverUp }) => { setServerAvailable(serverUp); if (user) { setAuthUser(user.username); setAuthState("server"); void sync.pull(); } else setAuthState("anonymous"); }); }, []);
   // multi-device: pull server changes when returning to the tab
   useEffect(() => {
     if (authState !== "server") return;
@@ -346,6 +349,7 @@ function App() {
       isRepsOnly: completedLogs.every(isRepsOnlyLog),
     });
     await finishSession(currentSession);
+    void maybeAutosave();
     setSessionId(null);
     setActiveLogId(null);
     localStorage.removeItem("rp-current-session");
@@ -486,7 +490,7 @@ function App() {
       {tab === "History" && <HistoryView exercises={exercises ?? []} unit={unit} />}
       {tab === "Guide" && <Guide />}
       {tab === "Extra" && <ExtraView slug={articleSlug} onOpen={setArticleSlug} />}
-      {tab === "Settings" && <SettingsView settings={settings} unit={unit} setUnits={setUnits} authUser={authUser} onLogout={() => void handleLogout()} onShowAuth={() => setSkipAuthScreen(false)} />}
+      {tab === "Settings" && <SettingsView settings={settings} unit={unit} setUnits={setUnits} authUser={authUser} serverAvailable={serverAvailable} onLogout={() => void handleLogout()} onShowAuth={() => setSkipAuthScreen(false)} />}
     </main>
     <nav className="tabbar">{tabs.map(t => <button key={t} className={tab === t ? "nav-item active" : "nav-item"} onClick={() => setTab(t)}><span className="nav-icon">{({Train:"◒",Programs:"▤",History:"↗",Guide:"≡",Extra:"✦",Settings:"⚙"})[t]}</span>{t}</button>)}</nav>
     {showProgramForm && <div className="modal-backdrop" onClick={() => setShowProgramForm(false)}><div className="modal-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">PROGRAM SETUP</p><h2>Create a program</h2></div><button className="close-button" onClick={()=>setShowProgramForm(false)}>×</button></div><p className="lede">A program groups workout splits. The first split is created with it; add more from the program card.</p><label className="form-label">Program name<input value={programName} onChange={e=>setProgramName(e.target.value)} placeholder="e.g. Strength block" /></label><label className="form-label">First workout split<input value={splitName} onChange={e=>setSplitName(e.target.value)} placeholder="e.g. Upper A" /></label><div className="modal-actions"><button className="button-secondary" onClick={()=>setShowProgramForm(false)}>Cancel</button><button className="button-primary" onClick={()=>void createNewProgram(programName,splitName)}>Create & activate</button></div></div></div>}
@@ -1007,8 +1011,8 @@ function HistoryView(props: { exercises: Exercise[]; unit: "kg" | "lb" }) {
   </section>;
 }
 
-function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; warmup_reminder_enabled?: boolean; hide_default_programs?: 0 | 1; hidden_default_program_ids?: string[] } | undefined | null; unit: "kg" | "lb"; setUnits: (u: "kg" | "lb") => void; authUser: string | null; onLogout: () => void; onShowAuth: () => void }) {
-  const { settings, unit, setUnits, authUser, onLogout, onShowAuth } = props;
+function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; warmup_reminder_enabled?: boolean; hide_default_programs?: 0 | 1; hidden_default_program_ids?: string[]; local_backups?: boolean } | undefined | null; unit: "kg" | "lb"; setUnits: (u: "kg" | "lb") => void; authUser: string | null; serverAvailable: boolean; onLogout: () => void; onShowAuth: () => void }) {
+  const { settings, unit, setUnits, authUser, serverAvailable, onLogout, onShowAuth } = props;
   const [theme, setTheme] = useState(settings?.theme ?? "system");
   const [busyExport, setBusyExport] = useState(false);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
@@ -1040,6 +1044,9 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
     URL.revokeObjectURL(url);
   }
   const [csvReport, setCsvReport] = useState<string | null>(null);
+  const [localBackups, setLocalBackups] = useState(!!settings?.local_backups);
+  const [backupReport, setBackupReport] = useState<string | null>(null);
+  const [urlDraft, setUrlDraft] = useState(sync.getServerUrl());
   async function doImportCsv(file: File) {
     const text = await file.text();
     const result = await repo.importLogsCsv(text);
@@ -1054,7 +1061,9 @@ function SettingsView(props: { settings: { units: "kg" | "lb"; theme?: string; w
     <div className="settings-card"><strong>Units</strong><p>Weights are entered and displayed in this unit. History re-renders, nothing is rewritten.</p><div className="unit-switch"><button className={unit === "kg" ? "selected" : ""} onClick={() => setUnits("kg")}>Kilograms · kg</button><button className={unit === "lb" ? "selected" : ""} onClick={() => setUnits("lb")}>Pounds · lb</button></div></div>
     <div className="settings-card"><strong>Theme</strong><p>{({ system: "Follow system", light: "Light", dark: "Dark" })[theme]}</p><div className="unit-switch">{(["system", "light", "dark"] as const).map(t => <button key={t} className={theme === t ? "selected" : ""} onClick={() => { setTheme(t); void repo.patchSettings({ theme: t }); }}>{({ system: "System", light: "Light", dark: "Dark" })[t]}</button>)}</div></div>
     <div className="settings-card"><strong>Data</strong><p>Backup/restore all data (JSON), or your training log as a spreadsheet (CSV). CSV import accepts the same column shape, <button className="link-button" onClick={() => void doDownloadTemplate()}>download the template</button> to fill in past sessions.</p><div className="unit-switch"><button className="button-secondary" onClick={() => void doExportJson()} disabled={busyExport}>Export JSON</button><button className="button-secondary" onClick={() => void doExportCsv()} disabled={busyExport}>Export CSV</button><label className="button-secondary import-label">Import JSON<input type="file" accept="application/json" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImport(f); }} /></label><label className="button-secondary import-label">Import CSV<input type="file" accept="text/csv" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void doImportCsv(f); }} /></label></div>{csvReport && <p className="small-note">{csvReport}</p>}</div>
-    <div className="settings-card"><strong>Account</strong><p>{authUser ? <>Logged in as <strong>{authUser}</strong>, data syncs to the server on every change and follows you to any device you log in from.</> : "Using local storage only, data lives in this browser. Log in or create an account to sync across devices."}</p>{authUser ? <div className="unit-switch"><button className="button-secondary" onClick={onLogout}>Log out</button></div> : <div className="unit-switch"><button className="button-secondary" onClick={onShowAuth}>Log in / Create account</button></div>}</div>
+    {(authUser || serverAvailable) && <div className="settings-card"><strong>Account</strong><p>{authUser ? <>Logged in as <strong>{authUser}</strong>, data syncs to the server on every change and follows you to any device you log in from.</> : "A sync server was detected. Log in or create an account to sync across devices."}</p>{authUser ? <div className="unit-switch"><button className="button-secondary" onClick={onLogout}>Log out</button></div> : <div className="unit-switch"><button className="button-secondary" onClick={onShowAuth}>Log in / Create account</button></div>}</div>}
+    <div className="settings-card"><strong>Local backups</strong><p>After each finished workout, save a JSON snapshot of everything (programs, exercises, full history) as a file. On Android the file lands in the device Documents folder, where Nextcloud or Syncthing folder sync can pick it up. The ten newest backups are kept.</p><div className="unit-switch"><button className={localBackups ? "selected" : ""} onClick={() => { const next = !localBackups; setLocalBackups(next); void repo.patchSettings({ local_backups: next }); }}>After each workout</button><button className="button-secondary" onClick={() => void saveBackup().then(r => setBackupReport(r.location === "file" ? `Saved ${r.saved} to the device Documents folder.` : `Downloaded ${r.saved}.`)).catch(() => setBackupReport("Backup failed."))}>Save backup now</button></div>{backupReport && <p className="small-note">{backupReport}</p>}</div>
+    <div className="settings-card"><strong>Sync server (optional)</strong><p>By default everything stays on this device. If you run your own sync server (see the project README), enter its address here and the app will reload using it. Leave the field empty to use the address the app itself is served from.</p><div style={{ display: "flex", gap: "8px" }}><input value={urlDraft} onChange={e => setUrlDraft(e.target.value)} placeholder="https://your-server.example" style={{ flex: "1 1 auto", minWidth: 0 }} /><button className="button-secondary" onClick={() => { sync.setServerUrl(urlDraft); window.location.reload(); }}>Save</button></div></div>
     <div className="settings-card"><strong>Warm-up reminder</strong><p>Before each exercise's first working set, the app asks "warm-up sets done?", helpful while learning the habit, noise once it's routine. This only turns off the reminder; per-exercise warm-ups are controlled in the exercise view.</p><div className="unit-switch"><button className={settings?.warmup_reminder_enabled !== false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: true }); window.location.reload(); }}>On</button><button className={settings?.warmup_reminder_enabled === false ? "selected" : ""} onClick={() => { void repo.patchSettings({ warmup_reminder_enabled: false }); window.location.reload(); }}>Off</button></div></div>
     <div className="settings-card"><strong>Default programs</strong><p>Default programs are curated by the team and read-only; clone one to make it your own. Hiding them removes them from the Programs tab. Unchecking shows every default again and resets any individual hides.</p><label className="clone-history-check"><input type="checkbox" ref={el => { if (el) el.indeterminate = settings?.hide_default_programs !== 1 && (settings?.hidden_default_program_ids?.length ?? 0) > 0; }} checked={settings?.hide_default_programs === 1} onChange={e => { if (e.target.checked) void repo.patchSettings({ hide_default_programs: 1 }); else void repo.patchSettings({ hide_default_programs: 0, hidden_default_program_ids: [] }); window.location.reload(); }} /> Hide all default programs</label></div>
     <div className="settings-card"><strong>Training method</strong><p>{PROTOCOL_NAME} · 27-second rests · three partial sets per exercise</p></div>
