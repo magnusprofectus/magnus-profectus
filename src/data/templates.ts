@@ -6,9 +6,9 @@ export interface TemplateExercise { key: string; warmup_mode?: "auto" | "on" | "
 export interface TemplateWorkout { name: string; exercises: TemplateExercise[] }
 export interface ProgramTemplate { key: string; name: string; workouts: TemplateWorkout[] }
 export const programTemplates: ProgramTemplate[] = [
-  { key: "gym-2-split", name: "Gym 2-Split", workouts: [
-    { name: "Workout A", exercises: ["leg-press", "hack-squat", "romanian-deadlift", "seated-leg-curl", "bench-press", "incline-dumbbell-press", "ez-bar-curl", "cable-curl"].map(key => ({ key })) },
-    { name: "Workout B", exercises: ["lat-pulldown", "one-arm-dumbbell-row", "shoulder-press", "machine-shoulder-press", "skull-crusher", "triceps-pushdown", "standing-calf-raise", "seated-calf-raise"].map(key => ({ key })) },
+  { key: "gym-2-split", name: "Default Program", workouts: [
+    { name: "Workout A", exercises: ["flat-dumbbell-press", "leg-press", "dumbbell-curl", "incline-dumbbell-press", "standing-calf-raise", "hammer-curl"].map(key => ({ key })) },
+    { name: "Workout B", exercises: ["tripod-dumbbell-row", "close-grip-dumbbell-press", "shoulder-press", "lat-pulldown", "dumbbell-face-pull", "skull-crusher"].map(key => ({ key })) },
   ] },
 ];
 export function muscleGroupName(group: MuscleGroup): string {

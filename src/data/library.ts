@@ -18,18 +18,18 @@ export const exerciseLibrary: LibraryItem[] = [
   // back (10)
   item("lat-pulldown", "Lat Pulldown", "back", ["machine"]), item("one-arm-dumbbell-row", "One-Arm Dumbbell Row", "back", ["dumbbell"], { unilateral: true }), item("seated-cable-row", "Seated Cable Row", "back", ["cable"]), item("machine-row", "Machine Row", "back", ["machine"]),
   item("barbell-row", "Barbell Row", "back", ["barbell"]), item("chest-supported-row", "Chest-Supported Row", "back", ["machine"]), item("t-bar-row", "T-Bar Row", "back", ["machine"]), item("straight-arm-pulldown", "Straight-Arm Pulldown", "back", ["cable"]),
-  item("pull-up", "Pull-Up", "back", ["bodyweight"]), item("shrug", "Barbell Shrug", "traps", ["barbell"]),
+  item("pull-up", "Pull-Up", "back", ["bodyweight"]), item("tripod-dumbbell-row", "Tripod Dumbbell Row", "back", ["dumbbell"], { unilateral: true }), item("shrug", "Barbell Shrug", "traps", ["barbell"]),
   // traps (3)
   item("dumbbell-shrug", "Dumbbell Shrug", "traps", ["dumbbell"]), item("cable-shrug", "Cable Shrug", "traps", ["cable"]), item("machine-shrug", "Machine Shrug", "traps", ["machine"]),
   // shoulders (8)
   item("shoulder-press", "Seated Dumbbell Shoulder Press", "shoulders", ["dumbbell"]), item("machine-shoulder-press", "Machine Shoulder Press", "shoulders", ["machine"]), item("lateral-raise", "Dumbbell Lateral Raise", "shoulders", ["dumbbell"]),
-  item("cable-lateral-raise", "Cable Lateral Raise", "shoulders", ["cable"], { unilateral: true }), item("machine-lateral-raise", "Machine Lateral Raise", "shoulders", ["machine"]), item("rear-delt-fly", "Rear Delt Fly", "shoulders", ["dumbbell"]), item("reverse-pec-deck", "Reverse Pec Deck", "shoulders", ["machine"]), item("barbell-front-raise", "Barbell Front Raise", "shoulders", ["barbell"]),
+  item("cable-lateral-raise", "Cable Lateral Raise", "shoulders", ["cable"], { unilateral: true }), item("machine-lateral-raise", "Machine Lateral Raise", "shoulders", ["machine"]), item("rear-delt-fly", "Rear Delt Fly", "shoulders", ["dumbbell"]), item("reverse-pec-deck", "Reverse Pec Deck", "shoulders", ["machine"]), item("barbell-front-raise", "Barbell Front Raise", "shoulders", ["barbell"]), item("dumbbell-face-pull", "45-Degree Dumbbell Face Pull", "shoulders", ["dumbbell"]),
   // biceps (6)
   item("ez-bar-curl", "EZ-Bar Curl", "biceps", ["barbell"]), item("cable-curl", "Cable Curl", "biceps", ["cable"]), item("dumbbell-curl", "Dumbbell Curl", "biceps", ["dumbbell"]),
   item("incline-dumbbell-curl", "Incline Dumbbell Curl", "biceps", ["dumbbell"]), item("preacher-curl", "Preacher Curl", "biceps", ["machine"]), item("hammer-curl", "Hammer Curl", "biceps", ["dumbbell"]),
   // triceps (6)
   item("triceps-pushdown", "Cable Triceps Pushdown", "triceps", ["cable"]), item("skull-crusher", "EZ-Bar Skull Crusher", "triceps", ["barbell"], { safety_flag: true }), item("overhead-cable-extension", "Overhead Cable Extension", "triceps", ["cable"]),
-  item("machine-dip", "Machine Dip", "triceps", ["machine"]), item("dumbbell-overhead-extension", "Dumbbell Overhead Extension", "triceps", ["dumbbell"]), item("close-grip-bench", "Close-Grip Bench Press", "triceps", ["barbell"], { safety_flag: true }),
+  item("machine-dip", "Machine Dip", "triceps", ["machine"]), item("dumbbell-overhead-extension", "Dumbbell Overhead Extension", "triceps", ["dumbbell"]), item("close-grip-dumbbell-press", "Close-Grip Dumbbell Press", "triceps", ["dumbbell"]), item("close-grip-bench", "Close-Grip Bench Press", "triceps", ["barbell"], { safety_flag: true }),
   // forearms (3)
   item("wrist-curl", "Wrist Curl", "forearms", ["barbell"]), item("reverse-curl", "Reverse EZ-Bar Curl", "forearms", ["barbell"]), item("farmers-hold", "Farmer's Hold", "forearms", ["dumbbell"]),
   // calves (4)

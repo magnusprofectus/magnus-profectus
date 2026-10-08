@@ -18,9 +18,24 @@ export function ensureSeeded(): Promise<void> {
 async function seedOnce(): Promise<void> {
   const template = programTemplates[0];
   let program = await db.programs.where("template_key").equals(template.key).first();
+  // Legacy migration (2026-10-07): installs created before the default program was
+  // rebuilt carry name "My Program" and old split contents. If the user never
+  // renamed it (still exactly "My Program"), soft-delete its splits and links and
+  // fall through to a fresh build from the template. Renamed/customized copies stay.
+  if (program && program.name === "My Program") {
+    const now = new Date().toISOString();
+    const oldWorkouts = await db.workouts.where("program_id").equals(program.id).toArray();
+    for (const w of oldWorkouts) {
+      const links = await db.workout_exercises.where("workout_id").equals(w.id).toArray();
+      for (const l of links) await db.workout_exercises.put({ ...l, deleted_at: now, updated_at: now, _dirty: 1 as const });
+      await db.workouts.put({ ...w, deleted_at: now, updated_at: now, _dirty: 1 as const });
+    }
+    await db.programs.put({ ...program, name: template.name, updated_at: now, _dirty: 1 as const });
+    program = { ...program, name: template.name };
+  }
   if (!program) {
     const now = new Date().toISOString();
-    program = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, name: "My Program", template_key: template.key, sort: 0 };
+    program = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, name: template.name, template_key: template.key, sort: 0 };
     await db.programs.put(program);
   }
 

@@ -64,6 +64,9 @@ async function insertVersion(sp: Program, bundle: Bundle, version: string) {
     const key = (se as { library_key?: string }).library_key;
     let target: Exercise | undefined;
     if (key) target = (await db.exercises.where("library_key").equals(key).toArray()).find(e => !e.deleted_at);
+    // curator custom exercises have no library_key: match by name, else every pull
+    // would insert a duplicate copy of the same custom exercise.
+    else target = (await db.exercises.toArray()).find(e => !e.deleted_at && e.name.toLowerCase() === se.name.toLowerCase());
     if (!target) {
       target = { ...se, ...meta(), id: newId(), _dirty: 1 } as Exercise;
       await repo.save(db.exercises, target);
