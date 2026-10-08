@@ -1,4 +1,5 @@
 import { newId } from "./data/ids";
+import brandMark from "./assets/brand-mark.png";
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type Exercise, type ExerciseLog, type WorkoutExercise } from "./data/db";
@@ -416,7 +417,7 @@ function App() {
   if (busy) return <div className="boot">Starting {APP_NAME}…</div>;
   if (authState === "anonymous" && !skipAuthScreen) return <AuthScreen onSkip={() => setSkipAuthScreen(true)} onAuth={(u, p, m) => handleAuth(u, p, m)} />;
   return <div className="app-shell">
-    <header className="topbar"><div className="brand-mark">MP</div><div><strong>{APP_NAME}</strong><small>{PROTOCOL_NAME} · Local mode</small></div><span className="sync-pill"><i /> {authUser ? `${authUser} · synced` : "Local data"}</span>{authUser && <button className="button-secondary" onClick={() => void handleLogout()}>Log out</button>}</header>
+    <header className="topbar"><img className="brand-mark" src={brandMark} alt="Magnus Profectus mark" /><div><strong>{APP_NAME}</strong><small>{PROTOCOL_NAME} · Local mode</small></div><span className="sync-pill"><i /> {authUser ? `${authUser} · synced` : "Local data"}</span>{authUser && <button className="button-secondary" onClick={() => void handleLogout()}>Log out</button>}</header>
     <main className="main-content">
       {tab === "Train" && activeLog && activeExercise ? <ExerciseLogger
         exercise={activeExercise} log={activeLog}
@@ -503,7 +504,7 @@ function AuthScreen(props: { onSkip: () => void; onAuth: (username: string, pass
   }
   return <div className="auth-shell">
     <div className="auth-card">
-      <div className="brand-mark big">MP</div>
+      <img className="brand-mark big" src={brandMark} alt="Magnus Profectus mark" />
       <h1>{APP_NAME}</h1>
       <p className="lede">Create an account to keep your exercises, workouts, programs, settings and history on every device you log in from.</p>
       <div className="unit-switch">{(["login", "register"] as const).map(m => <button key={m} className={mode === m ? "selected" : ""} onClick={() => { setMode(m); setError(null); }}>{m === "login" ? "Log in" : "Create account"}</button>)}</div>
