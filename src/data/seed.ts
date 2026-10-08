@@ -16,13 +16,16 @@ export function ensureSeeded(): Promise<void> {
 
 /** Idempotent seed: safe under StrictMode, HMR, and interrupted prior writes. */
 async function seedOnce(): Promise<void> {
-  const template = programTemplates[0];
+  for (const template of programTemplates) await seedTemplate(template);
+}
+
+async function seedTemplate(template: (typeof programTemplates)[number]): Promise<void> {
   let program = await db.programs.where("template_key").equals(template.key).first();
   // Legacy migration (2026-10-07): installs created before the default program was
   // rebuilt carry name "My Program" and old split contents. If the user never
   // renamed it (still exactly "My Program"), soft-delete its splits and links and
   // fall through to a fresh build from the template. Renamed/customized copies stay.
-  if (program && program.name === "My Program") {
+  if (template === programTemplates[0] && program && program.name === "My Program") {
     const now = new Date().toISOString();
     const oldWorkouts = await db.workouts.where("program_id").equals(program.id).toArray();
     for (const w of oldWorkouts) {
@@ -54,7 +57,32 @@ async function seedOnce(): Promise<void> {
       await db.workouts.put(workout);
     }
     for (const [pos, spec] of wt.exercises.entries()) {
-      const item = libraryItem(spec.key);
+      if (spec.custom) {
+        const c = spec.custom;
+        let custom = (await db.exercises.toArray()).find(e => !e.deleted_at && e.name.toLowerCase() === c.name.toLowerCase());
+        if (!custom) {
+          const now = new Date().toISOString();
+          const primary = c.equipment[0] as keyof typeof equipmentIncrement;
+          const row = {
+            id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1 as const,
+            name: c.name, muscle_group: c.muscle_group as never, equipment: c.equipment as never, library_key: null, protocol: "rest_pause" as const, setup_notes: "",
+            base_weight: null, base_weight_unit: null, per_side: !!c.unilateral, unilateral: !!c.unilateral,
+            increment: equipmentIncrement[primary]?.kg ?? 2, increment_unit: "kg" as const, miniset_count: 3,
+            miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 12, total_target_max: 15,
+            rest_seconds: 27, safety_flag: false, technique_confirmed_at: null,
+          };
+          await db.exercises.put(row as never);
+          custom = row as never;
+        }
+        const existingLink = await db.workout_exercises.where("workout_id").equals(workout!.id).filter(row => row.exercise_id === custom.id && !row.replaced_at).first();
+        if (!existingLink) {
+          const now = new Date().toISOString();
+          const row: WorkoutExercise = { id: newId(), user_id: "local", created_at: now, updated_at: now, deleted_at: null, _dirty: 1, workout_id: workout!.id, exercise_id: custom.id, position: pos, warmup_mode: "auto", replaced_at: null };
+          await db.workout_exercises.put(row);
+        }
+        continue;
+      }
+      const item = libraryItem(spec.key!);
       if (!item) continue;
       let exercise = await db.exercises.where("library_key").equals(item.key).first();
       if (!exercise) {
