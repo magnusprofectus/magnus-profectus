@@ -8,3 +8,7 @@ export const PROTOCOL_NAME = "Rest-Pause Set"; // name of the working-set method
 export const LOCAL_USER_ID = "local";
 
 export const APP_VERSION = "0.1.0";
+
+/** Public donation page (Ko-fi). Empty string hides the donation entry
+ * points (page keeps rendering as "coming soon"). Set once, wire everywhere. */
+export const DONATION_URL = "";

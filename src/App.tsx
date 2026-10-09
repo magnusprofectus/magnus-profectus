@@ -34,7 +34,7 @@ import { recommendWeight } from "./domain/recommend";
 import * as recovery from "./domain/recovery";
 import { libraryItem, muscleGroupName } from "./data/templates";
 import { equipmentIncrement, exerciseLibrary } from "./data/library";
-import { APP_NAME, APP_VERSION, PROTOCOL_NAME } from "./config/app";
+import { APP_NAME, APP_VERSION, DONATION_URL, PROTOCOL_NAME } from "./config/app";
 import { loadTimer, remainingMs, startMinisetRest, stopTimer, storeTimer, unlockAudio, acquireWakeLock, releaseWakeLock, reacquireOnVisible } from "./timer/engine";
 import * as sync from "./data/sync";
 import { articles, articleBySlug, teamPicks, recordClick, fetchPopular } from "./data/articles";
@@ -1079,10 +1079,11 @@ function ExtraView(props: { slug: string | null; onOpen: (slug: string | null) =
       <aside className="extra-sidebar">
         <span className="overline">ALL ARTICLES</span>
         <button className="extra-home" onClick={() => setOpenSlug(null)}>⌂ Extra home</button>
+        <button className={`extra-side-link support-link${openSlug === "support" ? " selected" : ""}`} onClick={() => setOpenSlug("support")}>Support the project</button>
         {articles.map(a => <button key={a.slug} className={`extra-side-link${a.slug === openSlug ? " selected" : ""}`} onClick={() => setOpenSlug(a.slug)}>{a.title}<small>{a.date}</small></button>)}
       </aside>
       <div className="extra-content">
-        {open ? <ArticleReader article={open} onHome={() => setOpenSlug(null)} onOpen={slug => { setOpenSlug(slug); window.scrollTo(0, 0); }} /> : <ExtraHome onOpen={slug => { setOpenSlug(slug); window.scrollTo(0, 0); }} popular={popular} onOpenAll={() => setListOpen(true)} />}
+        {openSlug === "support" ? <SupportPage onHome={() => setOpenSlug(null)} /> : open ? <ArticleReader article={open} onHome={() => setOpenSlug(null)} onOpen={slug => { setOpenSlug(slug); window.scrollTo(0, 0); }} /> : <ExtraHome onOpen={slug => { setOpenSlug(slug); window.scrollTo(0, 0); }} popular={popular} onOpenAll={() => setListOpen(true)} />}
       </div>
     </div>
     {listOpen && <div className="modal-backdrop" onClick={() => setListOpen(false)}><div className="modal-panel article-list-panel" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="overline">ALL ARTICLES · BY DATE</p><h2>{articles.length} articles</h2></div><button className="close-button" onClick={() => setListOpen(false)}>×</button></div><div className="article-list">{articles.map(a => <ArticleRow key={a.slug} article={a} onOpen={slug => { setListOpen(false); setOpenSlug(slug); window.scrollTo(0, 0); }} />)}</div></div></div>}
@@ -1098,9 +1099,28 @@ function ExtraHome(props: { onOpen: (slug: string) => void; popular: string[]; o
     <h1>Extra information for those who seek it.</h1>
     <p className="lede">You don't need any of this. Everything required to run the program is in the Guide, and the app handles the rest. Ignore this tab entirely and you'll build muscle just the same. But if you want the ideas, the reasoning and the experience behind the method, the why under the instructions, this is where it lives.</p>
     <button className="button-primary all-articles-button" onClick={onOpenAll}>All articles ({articles.length})</button>
+    <ArticleRow article={supportArticle} onOpen={onOpen} />
     <div className="extra-section"><span className="overline">TEAM RECOMMENDATIONS</span>{picks.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>
     {popList.length > 0 && <div className="extra-section"><span className="overline">MOST READ</span>{popList.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>}
   </div>;
+}
+
+const supportArticle = { slug: "support", title: "Support the project", blurb: "The app is free and stays free. Donations cover hosting and keep the lights on.", date: "2026-10-09", body: "" };
+
+function SupportPage(props: { onHome: () => void }) {
+  return <article className="article-reader">
+    <button className="back-link" onClick={props.onHome}>‹ Extra home</button>
+    <p className="overline">BY THE PROFECTUS TEAM</p>
+    <h1>Support the project.</h1>
+    <div className="article-body">
+      <p>{APP_NAME} is free. Every feature, the whole guide, offline storage, sync to your own server. Your data stays yours and the code is open source, so nothing you rely on can ever be paywalled or taken away.</p>
+      <p>Free does not mean free to run. The domain, the hosting for this page and the build pipeline each cost money every year, and they add up as the app reaches more people. If the app earned its place in your routine, a small contribution helps us cover those costs and keep improving the method.</p>
+      <p>One promise, stated plainly: donations unlock nothing, because nothing is locked. Paying or not paying changes no feature, no storage and no limit. It is purely a thank-you that keeps the servers on.</p>
+      {DONATION_URL
+        ? <a className="button-primary support-donate" href={DONATION_URL} target="_blank" rel="noreferrer">Support {APP_NAME}</a>
+        : <p className="small-note">Donation page coming shortly. The app itself needs nothing from you today.</p>}
+    </div>
+  </article>;
 }
 
 function ArticleReader(props: { article: NonNullable<ReturnType<typeof articleBySlug>>; onHome: () => void; onOpen: (slug: string) => void }) {
