@@ -1098,6 +1098,7 @@ function ExtraHome(props: { onOpen: (slug: string) => void; popular: string[]; o
     <button className="button-primary all-articles-button" onClick={onOpenAll}>All articles ({articles.length})</button>
     <ArticleRow article={supportArticle} onOpen={onOpen} />
     <div className="extra-section"><span className="overline">TEAM RECOMMENDATIONS</span>{picks.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>
+    <div className="extra-section"><span className="overline">QUESTIONS?</span><ArticleRow article={articleBySlug("frequently-asked-questions")!} onOpen={onOpen} /></div>
     {popList.length > 0 && <div className="extra-section"><span className="overline">MOST READ</span>{popList.map(a => <ArticleRow key={a.slug} article={a} onOpen={onOpen} />)}</div>}
   </div>;
 }
