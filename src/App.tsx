@@ -628,8 +628,12 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
   const [expanded, setExpanded] = useState(false);
   const [tooltip, setTooltip] = useState<{ x: number; text: string } | null>(null);
   const completed = logs.filter(l => l.status === "completed").sort((a, b) => (a.completed_at ?? "").localeCompare(b.completed_at ?? ""));
-  if (completed.length === 0) return <p className="small-note">No completed sessions yet, the chart appears after your first logged set.</p>;
-  const shown = expanded ? completed : completed.slice(-10);
+  const live = logs.find(l => l.status === "in_progress");
+  if (completed.length === 0 && !live) return <p className="small-note">No sessions yet, the chart appears once you log your first set.</p>;
+  // In-progress session counts too (2026-10-10): the overview must agree with the
+  // live star in the exercise view. The live point renders hollow; it stops being
+  // special once the session is finished.
+  const shown = [...(expanded ? completed : completed.slice(-10)), ...(live ? [live] : [])];
   const fmt = (log: ExerciseLog) => isRepsOnlyLog(log)
   ? cappedReps({ miniset_reps: log.miniset_reps, targets_snapshot: log.targets_snapshot })
   : Math.round(displayValue(cappedLoadKg({ ...log, weight_kg: log.weight_kg ?? 0 }), "kg", displayUnit));
@@ -642,7 +646,7 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
   const y = (v: number) => pad.t + (1 - (v - minV) / spanV) * (H - pad.t - pad.b);
   const points = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
   return <div className="chart-block">
-  <div className="chart-head"><span className="overline">CAPPED {unitLabel.toUpperCase()} BY SESSION</span>{(() => { const last = shown[shown.length - 1]; const prev = shown[shown.length - 2]; if (!prev || !last) return null; const hollow = last.pain || last.is_deload || last.is_illness; const gold = !hollow && fmt(last) > fmt(prev) && totalReps({ miniset_reps: last.miniset_reps }) >= last.targets_snapshot.total_min; return gold ? <span className="chart-star" title="Total load up">★</span> : null; })()}{completed.length > 10 && <button className="button-secondary chart-expand" onClick={() => setExpanded(!expanded)}>{expanded ? "Show last 10" : "Expand all"}</button>}</div>
+  <div className="chart-head"><span className="overline">CAPPED {unitLabel.toUpperCase()} BY SESSION</span>{(() => { const last = shown[shown.length - 1]; const prev = shown[shown.length - 2]; if (!prev || !last) return null; const flaggedLast = last.pain || last.is_deload || last.is_illness; const gold = !flaggedLast && fmt(last) > fmt(prev) && totalReps({ miniset_reps: last.miniset_reps }) >= last.targets_snapshot.total_min; return gold ? <span className="chart-star" title="Total load up">★</span> : null; })()}{completed.length > 10 && <button className="button-secondary chart-expand" onClick={() => setExpanded(!expanded)}>{expanded ? "Show last 10" : "Expand all"}</button>}</div>
   <svg viewBox={`0 0 ${W} ${H}`} className="exercise-chart" role="img" aria-label="Progress chart">
     {[0, 0.5, 1].map(f => (
       <g key={f}>
@@ -653,13 +657,14 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
     <line x1={x(0)} x2={x(0)} y1={pad.t} y2={H - pad.b} className="chart-baseline" />
     <polyline points={points} className="chart-line" fill="none" />
     {shown.map((log, i) => {
-      const hollow = log.pain || log.is_deload || log.is_illness;
+      const hollow = log.pain || log.is_deload || log.is_illness || log.status === "in_progress";
       return <g key={log.id} onClick={e => setTooltip({ x: (e.nativeEvent as PointerEvent).offsetX, text: `${log.completed_at ? new Date(log.completed_at).toLocaleDateString() : ""} · ${log.weight_entered ?? "—"} ${log.weight_unit} × ${log.miniset_reps.map(v => v ?? "–").join("/")} · ${fmt(log)} ${unitLabel}${log.pain ? " · ⚠" : ""}${log.is_deload ? " · deload" : ""}${log.is_illness ? " · ill" : ""}` })}>
         <circle cx={x(i)} cy={y(values[i])} r={7} fill="transparent" />
         <circle cx={x(i)} cy={y(values[i])} r={hollow ? 4 : 4.5} className={hollow ? "chart-dot hollow" : "chart-dot"} />
         {(() => {
           const prev = shown[i - 1];
-          const gold = !hollow && prev && values[i] > values[i - 1] && totalReps({ miniset_reps: log.miniset_reps }) >= log.targets_snapshot.total_min;
+          const flaggedDay = log.pain || log.is_deload || log.is_illness;
+          const gold = !flaggedDay && prev && values[i] > values[i - 1] && totalReps({ miniset_reps: log.miniset_reps }) >= log.targets_snapshot.total_min;
           return gold ? <text x={x(i)} y={y(values[i]) - 8} textAnchor="middle" className="chart-star">★</text> : null;
         })()}
       </g>;
@@ -960,7 +965,7 @@ function HistoryView(props: { exercises: Exercise[]; unit: "kg" | "lb" }) {
   const [openSession, setOpenSession] = useState<string | null>(null);
   const [viewExercise, setViewExercise] = useState<string | null>(null);
   const sessionLogs = useLiveQuery(async () => openSession ? db.exercise_logs.where("session_id").equals(openSession).filter(x => !x.deleted_at).sortBy("position") : [], [openSession]);
-  const exLogs = useLiveQuery(async () => viewExercise ? db.exercise_logs.where("exercise_id").equals(viewExercise).filter(x => !x.deleted_at && x.status === "completed").toArray() : [], [viewExercise]);
+  const exLogs = useLiveQuery(async () => viewExercise ? db.exercise_logs.where("exercise_id").equals(viewExercise).filter(x => !x.deleted_at && (x.status === "completed" || x.status === "in_progress")).toArray() : [], [viewExercise]);
   const [dataMode, setDataMode] = useState<"sessions" | "exercises">("sessions");
   const [deleteConfirm, setDeleteConfirm] = useState<import("./data/db").Session | null>(null);
   return <section>
