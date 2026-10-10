@@ -89,3 +89,31 @@ export async function maybeAutosave(): Promise<void> {
     await saveBackup();
   } catch { /* a failed backup must never break finishing a workout */ }
 }
+
+/** Migration safety net: called on boot when the Dexie schema version changed
+ *  since the last run. The upgrade already happened by then (Dexie upgrades on
+ *  open), but a full snapshot taken immediately after still guards against a
+ *  broken upgrade path or a later bug eating data. Native: Documents file with
+ *  its own prefix (never pruned by the workout-backup rotation). Web: localStorage
+ *  (roughly a few MB of logs; skipped with a warning if it does not fit). */
+export async function snapshotOnSchemaChange(toVersion: number): Promise<string | null> {
+  const json = JSON.stringify(await exportAll(), null, 2);
+  const name = `${PREFIX.replace("-backup-", "-schema-")}${new Date().toISOString().slice(0, 10)}-v${toVersion}.json`;
+  try {
+    const cap = await import("@capacitor/core");
+    const Cap = (cap as any).Capacitor;
+    if (Cap?.isNativePlatform?.()) {
+      const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+      await Filesystem.writeFile({ path: name, data: json, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true });
+      const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Documents });
+      return uri.replace(/^file:\/\//, "").replace(/\/.*\/Android\/data\//, "/Android/data/");
+    }
+  } catch { /* fall through to localStorage */ }
+  try {
+    localStorage.setItem(`${PREFIX}schema-snapshot-v${toVersion}`, json);
+    return "browser storage";
+  } catch {
+    console.warn(`[backup] schema snapshot v${toVersion} too large for browser storage; run Export JSON manually to be safe`);
+    return null;
+  }
+}

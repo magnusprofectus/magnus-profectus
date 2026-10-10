@@ -1,5 +1,6 @@
-import { newId } from "./ids";
 import { db, type UserSettings, type WorkoutExercise } from "./db";
+import { newId } from "./ids";
+import { snapshotOnSchemaChange } from "./backup";
 import { equipmentIncrement } from "./library";
 import { libraryItem, programTemplates } from "./templates";
 import type { Unit } from "../domain/types";
@@ -16,6 +17,18 @@ export function ensureSeeded(): Promise<void> {
 
 /** Idempotent seed: safe under StrictMode, HMR, and interrupted prior writes. */
 async function seedOnce(): Promise<void> {
+  // Migration safety net (2026-10-08): if the Dexie schema version changed since
+  // the last boot, snapshot the whole store immediately. First-ever run (no
+  // stored version) has nothing to lose and is skipped.
+  const LAST_SCHEMA = "rp-last-db-version";
+  const prev = Number(localStorage.getItem(LAST_SCHEMA) ?? "0");
+  if (prev && prev < db.verno) {
+    try {
+      const where = await snapshotOnSchemaChange(db.verno);
+      if (where) localStorage.setItem("rp-schema-snapshot-note", `Data format updated to schema v${db.verno} on this launch. A safety snapshot of all data was saved to ${where} before any further use.`);
+    } catch (err) { console.warn("[seed] schema snapshot failed", err); }
+  }
+  localStorage.setItem(LAST_SCHEMA, String(db.verno));
   for (const template of programTemplates) await seedTemplate(template);
 }
 
