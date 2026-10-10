@@ -89,7 +89,7 @@ async function seedTemplate(template: (typeof programTemplates)[number]): Promis
             name: c.name, muscle_group: c.muscle_group as never, equipment: c.equipment as never, library_key: null, protocol: "rest_pause" as const, setup_notes: "",
             base_weight: null, base_weight_unit: null, per_side: !!c.unilateral, unilateral: !!c.unilateral,
             increment: equipmentIncrement[primary]?.kg ?? 2, increment_unit: "kg" as const, miniset_count: 3,
-            miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 12, total_target_max: 15,
+            miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 11, total_target_max: 15,
             rest_seconds: 27, safety_flag: false, technique_confirmed_at: null,
           };
           await db.exercises.put(row as never);
@@ -115,7 +115,7 @@ async function seedTemplate(template: (typeof programTemplates)[number]): Promis
           name: item.name, muscle_group: item.muscle_group, equipment: item.equipment, library_key: item.key, protocol: "rest_pause", setup_notes: "",
           base_weight: null, base_weight_unit: null, per_side: false, unilateral: !!item.unilateral,
           increment: equipmentIncrement[primary].kg, increment_unit: unit, miniset_count: 3,
-          miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 12, total_target_max: 15, rest_seconds: 27,
+          miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 11, total_target_max: 15, rest_seconds: 27,
           safety_flag: !!item.safety_flag, technique_confirmed_at: now, baseline_reset_at: null, stagnation_dismissed_at: null, archived_at: null,
         };
         await db.exercises.put(exercise);

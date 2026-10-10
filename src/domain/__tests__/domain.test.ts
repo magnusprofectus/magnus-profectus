@@ -43,10 +43,10 @@ describe("SPEC §6.11 progression sequence", () => {
     expect([S1, S2, S3, S4, S5, S6, S7, S8].map(cappedLoadKg)).toEqual([1300, 1400, 1500, 1332.5, 1435, 1435, 1332.5, 1300]);
     expect(rows.map(x => x.status)).toEqual(["baseline", "progress", "progress", "progress_star", "progress", "no_progress", "no_progress", "baseline"]);
   });
-  it("classifies session result trend and star", () => {
+  it("classifies session result: one star for any in-range load progression", () => {
     expect(compareResult(S1, null, true)).toEqual({ kind: "baseline", pct: null });
-    expect(compareResult(S2, S1, false)).toEqual({ kind: "trend", trend: "improved", pct: 7.7 });
-    expect(compareResult(S4, S3, false).kind).toBe("star");
+    expect(compareResult(S2, S1, false)).toEqual({ kind: "star", pct: 7.7 });
+    expect(compareResult(S4, S3, false)).toEqual({ kind: "trend", trend: "regressed", pct: -11.2 });
   });
   it("counts stagnation and resets after gap baseline", () => {
     expect(stagnationCount([S1, S2, S3, S4, S5, S6], settings)).toBe(1);
@@ -87,12 +87,12 @@ describe("eligibility and baseline edge cases", () => {
     expect(stagnationCount([S1, S2, S3, S4, S5, S6, S7], dismissed)).toBe(2);
     expect(stagnationCount([S1, S2, S3, S4, S5, S6], dismissed)).toBe(1);
   });
-  it("uses capped reps in reps-only mode, without star", () => {
+  it("uses capped reps in reps-only mode, star included", () => {
     const body1 = log(1, 0, [5, 3, 2], { weight_kg: 0 });
     const body2 = log(2, 0, [6, 4, 2], { weight_kg: 0 });
     expect(cappedLoadKg(body1)).toBe(0);
     expect(classifyLogs([body1, body2], settings).map(x => x.status)).toEqual(["baseline", "progress"]);
-    expect(compareResult(body2, body1, false).kind).toBe("trend");
+    expect(compareResult(body2, body1, false).kind).toBe("star");
   });
 });
 

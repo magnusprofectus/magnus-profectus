@@ -384,7 +384,7 @@ function App() {
       name: item.name, muscle_group: item.muscle_group, equipment: item.equipment, library_key: item.key, setup_notes: "",
       base_weight: null, base_weight_unit: null, per_side: false, unilateral: !!item.unilateral,
       increment: equipmentIncrement[item.equipment[0]].kg, increment_unit: unit, miniset_count: 3,
-      miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 12, total_target_max: 15,
+      miniset_targets: [[5, 7], [3, 5], [2, 4]], total_target_min: 11, total_target_max: 15,
       rest_seconds: 27, safety_flag: !!item.safety_flag, technique_confirmed: true,
     });
     return ex.id;
@@ -550,7 +550,7 @@ function CustomExerciseModal(props: { onClose: () => void; unit: "kg" | "lb"; wo
       base_weight_unit: baseWeight === "" ? null : unit, per_side: perSide, unilateral,
       increment: 5, increment_unit: unit, miniset_count: count,
       miniset_targets: recovery.deriveTargets(rest, Number(set1Target) || 6, count),
-      total_target_min: 12, total_target_max: 15, rest_seconds: rest, safety_flag: safety, technique_confirmed: true,
+      total_target_min: 11, total_target_max: 15, rest_seconds: rest, safety_flag: safety, technique_confirmed: true,
     });
     if (workoutId) await repo.addExerciseToWorkout(workoutId, saved.id);
     onCreated(saved.id);
@@ -642,7 +642,7 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
   const y = (v: number) => pad.t + (1 - (v - minV) / spanV) * (H - pad.t - pad.b);
   const points = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
   return <div className="chart-block">
-  <div className="chart-head"><span className="overline">CAPPED {unitLabel.toUpperCase()} BY SESSION</span>{completed.length > 10 && <button className="button-secondary chart-expand" onClick={() => setExpanded(!expanded)}>{expanded ? "Show last 10" : "Expand all"}</button>}</div>
+  <div className="chart-head"><span className="overline">CAPPED {unitLabel.toUpperCase()} BY SESSION</span>{(() => { const last = shown[shown.length - 1]; const prev = shown[shown.length - 2]; if (!prev || !last) return null; const hollow = last.pain || last.is_deload || last.is_illness; const gold = !hollow && fmt(last) > fmt(prev) && totalReps({ miniset_reps: last.miniset_reps }) >= last.targets_snapshot.total_min; return gold ? <span className="chart-star" title="Total load up">★</span> : null; })()}{completed.length > 10 && <button className="button-secondary chart-expand" onClick={() => setExpanded(!expanded)}>{expanded ? "Show last 10" : "Expand all"}</button>}</div>
   <svg viewBox={`0 0 ${W} ${H}`} className="exercise-chart" role="img" aria-label="Progress chart">
     {[0, 0.5, 1].map(f => (
       <g key={f}>
@@ -659,8 +659,8 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
         <circle cx={x(i)} cy={y(values[i])} r={hollow ? 4 : 4.5} className={hollow ? "chart-dot hollow" : "chart-dot"} />
         {(() => {
           const prev = shown[i - 1];
-          const star = prev && !isRepsOnlyLog(log) && realLoadKg(log) > realLoadKg(prev) && totalReps({ miniset_reps: log.miniset_reps }) >= log.targets_snapshot.total_min;
-          return star ? <text x={x(i)} y={y(values[i]) - 8} textAnchor="middle" className="chart-star">★</text> : null;
+          const gold = !hollow && prev && values[i] > values[i - 1] && totalReps({ miniset_reps: log.miniset_reps }) >= log.targets_snapshot.total_min;
+          return gold ? <text x={x(i)} y={y(values[i]) - 8} textAnchor="middle" className="chart-star">★</text> : null;
         })()}
       </g>;
     })}
@@ -668,9 +668,6 @@ function FinishSummaryModal(props: { data: FinishSummaryData; onClose: () => voi
   </svg>
   {tooltip && <div className="chart-tooltip" onClick={() => setTooltip(null)}>{tooltip.text}</div>}
   </div>;
-  }
-  function realLoadKg(log: ExerciseLog): number {
-  return (log.base_weight_kg_snapshot ?? 0) + (log.weight_kg ?? 0) * (log.per_side_snapshot ? 2 : 1);
   }
 
 function ExerciseLogger(props: {
@@ -790,7 +787,7 @@ function ExerciseLogger(props: {
       {warmupRequired && warmups.length > 0 && <div className="warmup-block"><span className="overline">WARM-UP SUGGESTION</span>{warmups.map((row, i) => <div key={i} className="warmup-row">{row.label}</div>)}<small className="warmup-note">Rounded down to the nearest {displayUnit}, pick the nearest weight this exercise has.</small></div>}
       <div className="miniset-list">{log.miniset_reps.map((_value, i) => <label className="miniset-row" key={i}><span className="miniset-name">PARTIAL SET {i + 1}<small>{newWeight ? "★ new weight" : `Range ${targets.miniset_targets[i]?.join("–")} · to failure${previous?.miniset_reps[i] != null ? ` · last: ${previous.miniset_reps[i]}` : ""}`}</small></span><button type="button" className="rep-step" aria-label={`Decrease partial set ${i + 1}`} onClick={() => { const n = Math.max(0, (shownReps[i] ?? 0) - 1); void updateMinisetRep(log.id, i, n); }}>−</button><input className="reps-input" inputMode="numeric" type="number" min="0" value={shownReps[i] ?? ""} onChange={e => { void updateMinisetRep(log.id, i, e.target.value === "" ? null : Number(e.target.value)); }} /><button type="button" className="rep-step" aria-label={`Increase partial set ${i + 1}`} onClick={() => { const n = (shownReps[i] ?? 0) + 1; void updateMinisetRep(log.id, i, n); }}>＋</button><span className="reps-unit">reps</span></label>)}</div>
       <div className="rating-row"><span className="overline">RATING</span>{[1, 1.5, 2, 2.5, 3].map(r => <button key={r} className={log.rating === r ? "rating-chip selected" : "rating-chip"} onClick={() => void onChange({ rating: r })}>{r}</button>)}<small>1 = easy · 2 = right · 3 = too heavy</small></div>
-      <div className="result-panel"><span className="overline">LIVE RESULT</span><strong>{reps} <small>REPS</small> · {fmtLoad(load)} <small>{repsOnly ? "REPS" : `${displayUnit} LOAD`}</small>{result?.kind === "star" && <span className="star"> ★</span>}{result?.kind === "trend" && <span className={`trend trend-${result.trend}`}>{result.trend === "improved" ? " ↑" : result.trend === "same" ? " =" : " ↓"}{result.pct !== null && ` ${result.pct > 0 ? "+" : ""}${result.pct}%`}</span>}{result?.kind === "baseline" && <span className="trend baseline"> Fresh start</span>}</strong><span className="save-indicator" aria-live="polite">Autosaves</span><p>{reps >= targets.total_max ? `At/above target: go heavier next time. Reps past ${targets.total_max} don't count.` : reps >= targets.total_min ? (result?.kind === "star" ? "★ Heavier weight and reps in range. That's progress." : "In range. Beat this total next time.") : "Below target: go lighter next time."}</p></div>
+      <div className="result-panel"><span className="overline">LIVE RESULT</span><strong>{reps} <small>REPS</small> · {fmtLoad(load)} <small>{repsOnly ? "REPS" : `${displayUnit} LOAD`}</small>{result?.kind === "star" && <span className="star"> ★</span>}{result?.kind === "trend" && <span className={`trend trend-${result.trend}`}>{result.trend === "improved" ? " ↑" : result.trend === "same" ? " =" : " ↓"}{result.pct !== null && ` ${result.pct > 0 ? "+" : ""}${result.pct}%`}</span>}{result?.kind === "baseline" && <span className="trend baseline"> Fresh start</span>}</strong><span className="save-indicator" aria-live="polite">Autosaves</span><p>{reps >= targets.total_max ? `At/above target: go heavier next time. Reps past ${targets.total_max} don't count.` : reps >= targets.total_min ? (result?.kind === "star" ? "★ Total load up. That's progress." : "In range. Beat this total next time.") : "Below target: go lighter next time."}</p></div>
       <div className="logger-actions">
         <label className="pain-check"><input type="checkbox" checked={log.pain} onChange={e => void onChange({ pain: e.target.checked })} /> PAIN</label>
         <label className="pain-check" title="Warm-up sets for this exercise in this workout"><input type="checkbox" checked={warmupRequired} onChange={e => void onToggleWarmup(e.target.checked)} /> WARM-UP</label>
