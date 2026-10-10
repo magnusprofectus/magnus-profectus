@@ -217,18 +217,32 @@ function App() {
   const circuitUnavailableReason = circuitData.available ? "" : circuitData.reason === "no_session" ? "Start a session first, the circuit belongs to a running workout." : circuitData.reason === "no_warmup" ? "No exercise in this workout has warm-ups enabled (toggle WARM-UP per exercise)." : `Enter target weights for the warm-up exercises (${circuitData.missing?.join(", ") ?? ""}) in this session, or complete one full workout first, next time the weights are known and the circuit becomes available.`;
   const rowState = useMemo(() => {
     const logs = allLogs ?? [];
-    const map = new Map<string, { stagnation: number; last: ExerciseLog | undefined; painFlag: boolean; todayStatus: string; spark: number[] }>();
+    const map = new Map<string, { stagnation: number; last: ExerciseLog | undefined; painFlag: boolean; todayStatus: string; todayStar: boolean; spark: number[] }>();
+    // Row sparkline metric = capped total load (2026-10-10): weight times capped
+    // reps, matching the History chart. It used to plot per-rep weight only, so a
+    // rep increase at the same weight drew a perfectly flat line.
+    const cappedLoad = (x: ExerciseLog) => {
+      const perRep = (x.base_weight_kg_snapshot ?? 0) + (x.weight_kg ?? 0) * (x.per_side_snapshot ? 2 : 1);
+      const reps = x.miniset_reps.reduce<number>((acc, r) => acc + (r === null ? 0 : r), 0);
+      return perRep * Math.min(reps, x.targets_snapshot.total_max);
+    };
     for (const { ex, row } of joined) {
       const exLogs = logs.filter(x => x.exercise_id === ex.id);
-      // §7.5 mini: last 6 completed capped loads (kg) for the row sparkline
-      const spark = exLogs.filter(x => x.status === "completed").sort((a, b) => (a.completed_at ?? "").localeCompare(b.completed_at ?? "")).slice(-6)
-        .map(x => (x.base_weight_kg_snapshot ?? 0) + (x.weight_kg ?? 0) * (x.per_side_snapshot ? 2 : 1));
+      const prevCompleted = exLogs.filter(x => x.status === "completed").sort((a, b) => (a.completed_at ?? "").localeCompare(b.completed_at ?? ""));
       const today = sessionLogs?.find(x => x.exercise_id === ex.id && row.workout_id === selected);
+      const spark = prevCompleted.slice(-6).map(cappedLoad);
+      // the running session joins the sparkline live once reps exist
+      const hasReps = !!today && today.miniset_reps.some(v => (v ?? 0) > 0);
+      if (today && hasReps) spark.push(cappedLoad(today));
+      const last = prevCompleted.filter(x => x.id !== today?.id).sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0];
+      const repsOk = !!today && today.miniset_reps.reduce<number>((acc, r) => acc + (r === null ? 0 : r), 0) >= today.targets_snapshot.total_min;
       map.set(ex.id, {
         stagnation: stagnationCount(exLogs as unknown as import("./domain/types").DomainLog[], { baseline_reset_at: ex.baseline_reset_at, stagnation_dismissed_at: ex.stagnation_dismissed_at }, settings?.progression_window ?? 3, settings?.gap_reset_weeks ?? 4),
-        last: exLogs.filter(x => x.status === "completed").sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0],
-        painFlag: exLogs.filter(x => x.status === "completed").sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0]?.pain ?? false,
+        last,
+        painFlag: prevCompleted.sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0]?.pain ?? false,
         todayStatus: today?.status ?? "not_started",
+        // same rule as the exercise view: total load up vs the last completed session
+        todayStar: !!today && !!last && !today.pain && repsOk && cappedLoad(today) > cappedLoad(last),
         spark,
       });
     }
@@ -450,6 +464,7 @@ function App() {
             <span className="exercise-index">{String(i + 1).padStart(2, "0")}</span>
             <div className="exercise-info"><h3>{ex.name}</h3><p>{muscleGroupName(ex.muscle_group)} · {ex.equipment.join(" / ")}{state?.last ? ` · Last: ${state.last.weight_entered ?? "—"} × ${state.last.miniset_reps.map(x => x ?? "–").join("/")}` : ""}</p></div>
             {state?.painFlag && <span className="badge pain-badge" title="Pain flagged last time">⚠ PAIN</span>}
+            {state?.todayStar && <span className="star" title="Total load up">★</span>}
             <span className={`status-tag status-${state?.todayStatus ?? "not_started"}`}>{({ not_started: "READY", in_progress: "IN PROGRESS", completed: "✓ DONE", skipped: "SKIPPED" })[state?.todayStatus ?? "not_started"]}</span>
             {state && state.stagnation === 1 && <span className="badge amber-badge">Last chance</span>}
             {state && state.stagnation >= 2 && <span className="badge red-badge">Switch recommended</span>}
