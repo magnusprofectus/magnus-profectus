@@ -468,17 +468,11 @@ function App() {
             <span className={`status-tag status-${state?.todayStatus ?? "not_started"}`}>{({ not_started: "READY", in_progress: "IN PROGRESS", completed: "✓ DONE", skipped: "SKIPPED" })[state?.todayStatus ?? "not_started"]}</span>
             {state && state.stagnation === 1 && <span className="badge amber-badge">Last chance</span>}
             {state && state.stagnation >= 2 && <span className="badge red-badge">Switch recommended</span>}
-            {state && state.spark.length >= 2 && (() => {
-              const vals = state.spark; const min = Math.min(...vals), max = Math.max(...vals);
-              const pts = vals.map((v, i) => `${4 + i * (56 / Math.max(1, vals.length - 1))},${14 - (max === min ? 5 : Math.round(((v - min) / (max - min)) * 10))}`).join(" ");
-              return <svg className="row-spark" viewBox="0 0 64 18" aria-hidden="true"><polyline points={pts} fill="none" /></svg>;
-            })()}
-            <div className="row-controls">
+                        <div className="row-controls">
               {!lockedDefault && <>
                 <button className="row-action" aria-label={`Move ${ex.name} up`} onClick={() => void moveExercise(row.id, -1)}>↑</button>
                 <button className="row-action" aria-label={`Move ${ex.name} down`} onClick={() => void moveExercise(row.id, 1)}>↓</button>
               </>}
-              <button className="row-action" aria-label={`Open ${ex.name}`} onClick={() => void beginExercise(ex.id)}>›</button>
               {!lockedDefault && <button className="row-action danger" aria-label={`Remove ${ex.name}`} onClick={() => setRemoveConfirm({ linkId: row.id, name: ex.name })}>×</button>}
             </div>
           </article>;
