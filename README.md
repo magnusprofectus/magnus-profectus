@@ -17,9 +17,9 @@ Free and open source under AGPL-3.0. No ads, no tracking, no analytics. Your tra
 1. Open **[magnusprofectus.github.io/magnus-profectus](https://magnusprofectus.github.io/magnus-profectus/)** in your browser. Everything works right there, fully offline after the first load.
 2. **iPhone / iPad:** in Safari, tap the Share button, then **Add to Home Screen**. It then runs full-screen like an app. **Desktop:** install it as a PWA from the browser's address-bar icon if you like; otherwise a bookmark is enough.
 
-### Know the limitations
+These limitations apply to the browser version only; the installed Android APK avoids all of them.
 
-- **Browser-stored data can be evicted.** iOS in particular can clear website data for Safari pages not used for seven days (a browser rule, not our choice). The installed Android APK does not have this problem. **Use Export JSON in Settings now and then**, or turn on automatic backups after each workout, so a restore is always one file away.
+- **Browser-stored data can be evicted.** iOS in particular can clear website data for Safari pages not used for seven days (a browser rule, not our choice). **Use Export JSON in Settings now and then**, or turn on automatic backups after each workout, so a restore is always one file away.
 - **The rest-pause timer needs the app in focus.** If the screen is locked or the app is minimized, the timer pauses or the warning chime may not fire. Keep the screen on during a set; a cheap interval timer (the guide suggests a Gymboss) is the belt-and-braces option.
 - Progress lives in the app, not on a server. Switching devices is a matter of Export JSON on the old one, Import JSON on the new one.
 
