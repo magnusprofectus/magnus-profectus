@@ -16,4 +16,12 @@ The practical costs of dumbbells are modest and worth naming: weight jumps come 
 
 The one habit to keep: log which equipment you used and stay consistent within an exercise. The trend math compares sessions; comparing a dumbbell press to a machine press muddies it.
 
+## Choosing exercises that fit the method
+
+Not every exercise fits rest-pause cleanly, and two patterns are worth avoiding when you have a choice.
+
+**Skip heavily compound movements.** A big multi-joint lift loads several muscles with one weight, and they rarely need the same relative load: the muscle you are targeting reaches failure long after a smaller helper has already given out, or the other way around. The set then measures a compromise instead of a target. Heavy compounds also carry more technique and injury risk exactly where the method guarantees failure, three times per exercise. Isolation-friendly selections keep the stimulus where you aim it and keep the last rep safe.
+
+**Beware exercises worked one side at a time.** A one-arm row or a single-leg press breaks the rest arithmetic: while side one rests, side two works, so each side waits far longer than 27 seconds between partials, and the partial sets stop stacking fatigue the way the method needs. If equipment leaves you no alternative (the Founders Dumbbell Only Program lives with this deliberately), run the sides back to back and simply breathe for 5 to 10 seconds between sides instead of using the rest-pause timer. Each side then gets a real rest pause of its own, just a slightly longer one, and the log stays honest. Use such exercises sparingly, as an equipment compromise rather than a first choice.
+
 

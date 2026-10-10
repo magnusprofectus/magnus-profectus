@@ -1,6 +1,6 @@
 # Magnus Profectus
 
-A rest-pause method app for lifters who train past failure on purpose. Six exercises, two to four sessions a week, one working set per exercise taken to absolute failure with partials. The app carries the method: warm-up scheme, weight direction after each set, progression and stagnation tracking, pain gating, and a guide that explains every rule.
+A rest-pause method app for lifters who train to failure and beyond, on purpose. One working set per exercise, pushed past failure with timed partial sets. The recommended default program is just that, recommended: split, exercise selection, rest lengths and rep targets are all configurable. The app carries the method: warm-up scheme, weight direction after each set, progression and stagnation tracking, pain gating, and a guide that explains every rule.
 
 Free and open source under AGPL-3.0. No ads, no tracking, no analytics. Your training log stays on your device.
 

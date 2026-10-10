@@ -8,8 +8,8 @@ export interface TemplateWorkout { name: string; exercises: TemplateExercise[] }
 export interface ProgramTemplate { key: string; name: string; workouts: TemplateWorkout[] }
 export const programTemplates: ProgramTemplate[] = [
   { key: "gym-2-split", name: "Default Program", workouts: [
-    { name: "Workout A", exercises: ["flat-dumbbell-press", "leg-press", "dumbbell-curl", "incline-dumbbell-press", "standing-calf-raise", "hammer-curl"].map(key => ({ key })) },
-    { name: "Workout B", exercises: ["tripod-dumbbell-row", "close-grip-dumbbell-press", "shoulder-press", "lat-pulldown", "dumbbell-face-pull", "skull-crusher"].map(key => ({ key })) },
+    { name: "Chest, legs & biceps", exercises: ["flat-dumbbell-press", "leg-press", "dumbbell-curl", "incline-dumbbell-press", "standing-calf-raise", "hammer-curl"].map(key => ({ key })) },
+    { name: "Back, triceps & shoulders", exercises: ["seated-cable-row", "close-grip-dumbbell-press", "shoulder-press", "lat-pulldown", "dumbbell-face-pull", "skull-crusher"].map(key => ({ key })) },
   ] },
   { key: "founders-dumbbell", name: "Founders Dumbbell Only Program", workouts: [
     { name: "Chest, legs, biceps", exercises: [{ key: "flat-dumbbell-press" }, { custom: { name: "Dumbbell Squat", muscle_group: "quads", equipment: ["dumbbell"] } }, { key: "dumbbell-curl" }, { key: "incline-dumbbell-press" }, { custom: { name: "Seated Hammer Curl", muscle_group: "biceps", equipment: ["dumbbell"] } }] },

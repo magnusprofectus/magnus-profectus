@@ -25,7 +25,14 @@ async function seedTemplate(template: (typeof programTemplates)[number]): Promis
   // rebuilt carry name "My Program" and old split contents. If the user never
   // renamed it (still exactly "My Program"), soft-delete its splits and links and
   // fall through to a fresh build from the template. Renamed/customized copies stay.
-  if (template === programTemplates[0] && program && program.name === "My Program") {
+    // Rebuild condition covers both legacy names ("My Program") and installs that
+  // already migrated to "Default Program" but still carry the old generic split
+  // names, provided the user never renamed a split themselves.
+  const LEGACY_SPLIT_NAMES = new Set(["Workout A", "Workout B", "Workout C"]);
+  if (template === programTemplates[0] && program) {
+    const owned = (await db.workouts.where("program_id").equals(program.id).toArray()).filter(w => !w.deleted_at);
+    const untouchedSplits = owned.length > 0 && owned.every(w => LEGACY_SPLIT_NAMES.has(w.name));
+    if (program.name === "My Program" || (program.name === "Default Program" && untouchedSplits)) {
     const now = new Date().toISOString();
     const oldWorkouts = await db.workouts.where("program_id").equals(program.id).toArray();
     for (const w of oldWorkouts) {
@@ -35,6 +42,7 @@ async function seedTemplate(template: (typeof programTemplates)[number]): Promis
     }
     await db.programs.put({ ...program, name: template.name, updated_at: now, _dirty: 1 as const });
     program = { ...program, name: template.name };
+    }
   }
   if (!program) {
     const now = new Date().toISOString();
