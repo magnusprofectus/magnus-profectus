@@ -1162,7 +1162,7 @@ function renderMarkdownBody(body: string) {
 
 function Guide() {
   const [text, setText] = useState("");
-  useEffect(() => { fetch("/GUIDE.md").then(r => r.ok ? r.text() : Promise.reject()).then(setText).catch(() => setText("Guide content will appear here.")); }, []);
+  useEffect(() => { fetch(`${import.meta.env.BASE_URL}GUIDE.md`).then(r => r.ok ? r.text() : Promise.reject()).then(setText).catch(() => setText("Guide content will appear here.")); }, []);
   return <section className="guide-view"><p className="overline">FIELD GUIDE</p><h1>Train with intent.</h1><div className="guide-content">{(text || "Loading guide…").split("\n").map((line, i) => line.startsWith("#") ? <h2 key={i}>{line.replace(/^#+\s*/,"").replaceAll("{APP_NAME}", APP_NAME).replaceAll("{PROTOCOL_NAME}", PROTOCOL_NAME)}</h2> : line ? <p key={i}>{line.replace(/\*\*/g,"").replaceAll("{APP_NAME}", APP_NAME).replaceAll("{PROTOCOL_NAME}", PROTOCOL_NAME).replace(/^- /,"• ")}</p> : null)}</div></section>;
 }
 
