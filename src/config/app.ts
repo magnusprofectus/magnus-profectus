@@ -12,3 +12,8 @@ export const APP_VERSION = "0.1.0";
 /** Public donation page (Ko-fi). Empty string hides the donation entry
  * points (page keeps rendering as "coming soon"). Set once, wire everywhere. */
 export const DONATION_URL = "";
+
+/** Self-hosted sync is dormant in the public app (no UI surface): cross-origin
+ * setups are untested and the continuity story is local backups. Engine and
+ * server stay in the codebase; flip to true to re-expose login/Settings sync. */
+export const ENABLE_SELF_SYNC = false;

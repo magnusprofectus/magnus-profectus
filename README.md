@@ -29,18 +29,7 @@ Under active development with a small test group. The app is fully usable withou
 
 ## Why open source
 
-Trust in a training log means the data is yours and the code can be checked. Everything runs locally in your browser or on your device, and the sync server is a plain, dependency-free Node script you can read in one sitting.
-
-## Self-hosting the sync server (optional)
-
-The app works fully offline by default. If you want multi-device sync on your own terms:
-
-```bash
-cd server
-PORT=8080 node index.mjs
-```
-
-Zero npm dependencies, Node 22+ (uses the built-in `node:sqlite`). Data lands in a single SQLite file next to the script (override with `RP_DB`). Users register with a username and password only; no email is collected. Point the app's server setting at your instance.
+Trust in a training log means the data is yours and the code can be checked. Everything runs locally in your browser or on your device.
 
 ## Development
 

@@ -1,7 +1,8 @@
 // Local backup snapshots: JSON dumps of the whole training store, written after
 // each workout when enabled (Settings > Data). Two backends share one code path:
-//  - Android APK (Capacitor): written to the device Documents directory, which
-//    Nextcloud/Syncthing folder sync can pick up. Keeps the newest KEEP files.
+//  - Android APK (Capacitor): written to Directory.Documents, which on
+//    Android 11+ resolves to the APP-PRIVATE folder (/Android/data/<pkg>/files/Documents/);
+//    invisible to cloud-sync apps, users must copy/share the file out. Keeps the newest KEEP files.
 //  - Browser/PWA: triggers a normal download (no persistent folder access there;
 //    automatic folder backup requires the APK wrapper, not the wrapper alone).
 import { exportAll, getSettings } from "./repo";
