@@ -557,7 +557,7 @@ Most workout apps try to be everything for everyone. This one does one thing, a 
 
 **It's fast and light.** A few hundred kilobytes, no bloat, built to work on a five-year-old phone over a weak connection, and fully offline. Screens load instantly because there's almost nothing to load.
 
-**It's free to use.** The full functionality, every exercise, every feature, costs nothing. The straightforward business model: a paid tier for genuine platform value later (reliable locked-screen timers, notifications, sync infrastructure), and if the app has given you value, you can support the project. The training is never held hostage.
+**It's free to use.** The full functionality, every exercise, every feature, costs nothing, and it stays that way. There is no premium tier waiting behind your data. If the app has given you value, you can support the project as a thank-you, and that is the whole business model. The training is never held hostage.
 
 **And yes, the gaps in the alternatives are real.** The big trackers' free tiers cap your routines, your custom exercises, your history depth; their complexity serves engagement metrics more than training logic; none of them encode a method's rules, so the best of them can only record. If one of them fits how you train, use it happily. This app isn't competing for the everything-lifter, it's a complete, focused, transparent tool for one proven method, with the philosophy on its sleeve.
 

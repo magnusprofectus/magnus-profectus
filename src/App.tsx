@@ -499,7 +499,7 @@ function App() {
 }
 
 /** Local test-phase auth (user-approved 2026-09-30): open registration, username+password,
- * no email verification/recovery, both come with the hosted/Supabase phase. */
+ * no email verification/recovery, both deferred for now. */
 function AuthScreen(props: { onSkip: () => void; onAuth: (username: string, password: string, mode: "login" | "register") => Promise<void> }) {
   const { onSkip, onAuth } = props;
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -1128,7 +1128,7 @@ function SupportPage(props: { onHome: () => void }) {
       <p>{APP_NAME} is free. Every feature, the whole guide, offline storage, sync to your own server. Your data stays yours and the code is open source, so nothing you rely on can ever be paywalled or taken away.</p>
       <p>If this app earned its place in your routine, you already know what the method delivers: steady, measurable progress toward a muscular, fit physique at a low bodyfat, no gimmicks and nothing hidden behind a paywall. Building, maintaining and improving the app takes real hours, and it will keep taking them as new features land. If you got value from it, a small donation is a direct way to say thank you for that value and the work behind it.</p>
       <p>One promise, stated plainly: donations unlock nothing, because nothing is locked. Paying or not paying changes no feature, no storage and no limit. It is purely a thank-you.</p>
-      <p className="small-note">A future hosted sync service will be a separate paid option for those who want it. This page is not that.</p>
+      <p className="small-note">Your data is already safe by design: stored on your device, automatic backups and JSON export cover the phone-swap case, and sync to your own server is built in.</p>
       {DONATION_URL
         ? <a className="button-primary support-donate" href={DONATION_URL} target="_blank" rel="noreferrer">Support {APP_NAME}</a>
         : <p className="small-note">Donation page coming shortly. The app itself needs nothing from you today.</p>}

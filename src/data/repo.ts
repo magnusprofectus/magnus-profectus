@@ -1,5 +1,5 @@
 // Centralized data access (SPEC §5/§12 shape). All writes go through here so a
-// later Supabase sync engine can intercept push/pull in one place.
+// a later sync backend can intercept push/pull in one place.
 import { db, type BaseRow, type Exercise, type ExerciseLog, type Program, type Session, type UserSettings, type Workout, type WorkoutExercise } from "./db";
 import { newId } from "./ids";
 import { pushRow } from "./sync";

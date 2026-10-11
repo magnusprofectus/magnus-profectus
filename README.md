@@ -25,7 +25,7 @@ These limitations apply to the browser version only; the installed Android APK a
 
 ## Status
 
-Under active development with a small test group. A hosted sync service is planned; the app is fully usable without any account or network connection.
+Under active development with a small test group. The app is fully usable without any account or network connection.
 
 ## Why open source
 
